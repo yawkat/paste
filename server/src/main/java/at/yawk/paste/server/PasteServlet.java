@@ -22,7 +22,7 @@ public abstract class PasteServlet<D extends PasteData> implements Servlet {
     private final Class<D> dataType;
     private Pattern pattern;
 
-    @Inject Database database;
+    @Inject public Database database;
 
     @SuppressWarnings("unchecked")
     public PasteServlet() {
@@ -61,12 +61,14 @@ public abstract class PasteServlet<D extends PasteData> implements Servlet {
 
     @Override
     public void handle(Request request) throws Exception {
-        Matcher matcher = pattern.matcher(request.getExchange().getRelativePath());
-        if (matcher.matches()) {
-            handle0(request, matcher);
-        } else {
-            request.proceed();
+        if (request.getExchange().getRequestMethod().equalToString("GET")) {
+            Matcher matcher = pattern.matcher(request.getExchange().getRelativePath());
+            if (matcher.matches()) {
+                handle0(request, matcher);
+                return;
+            }
         }
+        request.proceed();
     }
 
     private void handle0(Request request, Matcher matcher) throws Exception {
