@@ -16,6 +16,7 @@ import javax.inject.Inject;
 class ServletManager {
     @Inject List<Servlet> servlets;
     @Inject Config config;
+    @Inject TemplateEngine templateEngine;
     @Inject Database database;
 
     @PostConstruct
@@ -27,7 +28,7 @@ class ServletManager {
     }
 
     void handle(HttpServerExchange exchange) {
-        new Request(exchange, database, servlets.iterator()).proceed();
+        new Request(exchange, database, templateEngine, servlets.iterator()).proceed();
     }
 
     @PostConstruct
