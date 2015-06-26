@@ -3,7 +3,6 @@ package at.yawk.paste.server;
 import at.yawk.paste.model.Paste;
 import at.yawk.paste.model.PasteData;
 import at.yawk.paste.server.db.Database;
-import io.undertow.server.HttpServerExchange;
 import java.lang.annotation.*;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -49,21 +48,22 @@ public abstract class PasteServlet<D extends PasteData> implements Servlet {
     }
 
     @Override
-    public void handle(HttpServerExchange request) {
-        Matcher matcher = pattern.matcher(request.getRelativePath());
+    public void handle(Request request) {
+        Matcher matcher = pattern.matcher(request.getExchange().getRelativePath());
         if (matcher.matches()) {
             handle0(request, matcher);
+        } else {
+            request.proceed();
         }
     }
 
-    private void handle0(HttpServerExchange request, Matcher matcher) {
+    private void handle0(Request request, Matcher matcher) {
         String id = matcher.group(1);
         Optional<Paste> paste = database.getPaste(id, false);
         if (paste == null) {
-            if (request.isInIoThread()) {
+            if (request.getExchange().isInIoThread()) {
                 // move to worker thread
-                request.startBlocking();
-                request.dispatch(exchange -> {
+                request.getExchange().dispatch(exchange -> {
                     handle0(request, matcher);
                 });
                 return;
@@ -73,19 +73,16 @@ public abstract class PasteServlet<D extends PasteData> implements Servlet {
             }
         }
 
-        if (paste.isPresent()) {
-            if (dataType.isInstance(paste.get().getData())) {
-                handle(request, paste.get());
-                request.endExchange();
-                return;
-            }
+        if (paste.isPresent() && dataType.isInstance(paste.get().getData())) {
+            handle(request, paste.get());
+            request.finish();
+        } else {
+            // try the other handlers
+            request.proceed();
         }
-
-        request.setResponseCode(404);
-        request.endExchange();
     }
 
-    protected abstract void handle(HttpServerExchange exchange, Paste paste);
+    protected abstract void handle(Request request, Paste paste);
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.TYPE)

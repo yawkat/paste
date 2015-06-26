@@ -1,5 +1,6 @@
 package at.yawk.paste.server;
 
+import at.yawk.paste.server.db.Database;
 import at.yawk.yarn.Component;
 import io.undertow.Undertow;
 import io.undertow.server.HttpServerExchange;
@@ -15,6 +16,7 @@ import javax.inject.Inject;
 class ServletManager {
     @Inject List<Servlet> servlets;
     @Inject Config config;
+    @Inject Database database;
 
     @PostConstruct
     void sortServlets() {
@@ -25,15 +27,7 @@ class ServletManager {
     }
 
     void handle(HttpServerExchange exchange) {
-        for (Servlet servlet : servlets) {
-            servlet.handle(exchange);
-            if (exchange.isComplete() || exchange.isBlocking()) {
-                // return since we would error below
-                return;
-            }
-        }
-        exchange.setResponseCode(404);
-        exchange.endExchange();
+        new Request(exchange, database, servlets.iterator()).proceed();
     }
 
     @PostConstruct
