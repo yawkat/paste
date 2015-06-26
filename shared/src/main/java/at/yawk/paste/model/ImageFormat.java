@@ -44,7 +44,7 @@ public enum ImageFormat {
     private final Collection<String> extensions;
     private final String mediaType;
 
-    public abstract RenderedImage decode(InputStream source) throws IOException;
+    public abstract BufferedImage decode(InputStream source) throws IOException;
 
     public abstract void encode(RenderedImage image, OutputStream target) throws IOException;
 

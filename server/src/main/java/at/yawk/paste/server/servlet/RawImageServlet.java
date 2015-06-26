@@ -8,6 +8,7 @@ import at.yawk.paste.server.Request;
 import at.yawk.yarn.Component;
 import io.undertow.util.HttpString;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -46,6 +47,12 @@ public class RawImageServlet extends PasteServlet<ImagePasteData> {
         request.getExchange().setResponseCode(200);
         request.getExchange().getResponseHeaders().add(new HttpString("Content-Type"), expectedFormat.getMediaType());
 
+        dumpImage(request, data, expectedFormat);
+
+        request.finish();
+    }
+
+    protected void dumpImage(Request request, ImagePasteData data, ImageFormat expectedFormat) throws IOException {
         byte[] bytes = data.getData();
         if (data.getFormat() == expectedFormat) {
             request.setContentLength(bytes.length);
@@ -53,7 +60,5 @@ public class RawImageServlet extends PasteServlet<ImagePasteData> {
         } else {
             data.getFormat().transformTo(new ByteArrayInputStream(bytes), expectedFormat, request.getOutputStream());
         }
-
-        request.finish();
     }
 }
