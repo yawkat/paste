@@ -55,7 +55,7 @@ public enum ImageFormat {
     // lookup
 
     private static final Map<String, ImageFormat> EXTENSIONS = new HashMap<String, ImageFormat>() {{
-        for (ImageFormat format : values()) {
+        for (ImageFormat format : ImageFormat.values()) {
             for (String extension : format.getExtensions()) {
                 put(extension, format);
             }

@@ -35,7 +35,7 @@ public class RawImageServlet extends PasteServlet<ImagePasteData> {
 
     @Override
     protected void handle(Request request, Paste paste, ImagePasteData data, List<String> groups) throws Exception {
-        ImageFormat expectedFormat = ImageFormat.byExtension(groups.get(0));
+        ImageFormat expectedFormat = ImageFormat.byExtension(groups.get(0).toLowerCase());
 
         if (expectedFormat == null) {
             // should probably not happen but handle it anyway
