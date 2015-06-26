@@ -1,6 +1,7 @@
 package at.yawk.paste.model;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.RenderedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -23,7 +24,7 @@ public enum ImageFormat {
         }
 
         @Override
-        public void encode(BufferedImage image, OutputStream target) throws IOException {
+        public void encode(RenderedImage image, OutputStream target) throws IOException {
             ImageIO.write(image, "PNG", target);
         }
     },
@@ -34,7 +35,7 @@ public enum ImageFormat {
         }
 
         @Override
-        public void encode(BufferedImage image, OutputStream target) throws IOException {
+        public void encode(RenderedImage image, OutputStream target) throws IOException {
             ImageIO.write(image, "PNG", target);
         }
     };
@@ -43,9 +44,9 @@ public enum ImageFormat {
     private final Collection<String> extensions;
     private final String mediaType;
 
-    public abstract BufferedImage decode(InputStream source) throws IOException;
+    public abstract RenderedImage decode(InputStream source) throws IOException;
 
-    public abstract void encode(BufferedImage image, OutputStream target) throws IOException;
+    public abstract void encode(RenderedImage image, OutputStream target) throws IOException;
 
     public void transformTo(InputStream source, ImageFormat targetFormat, OutputStream target) throws IOException {
         targetFormat.encode(decode(source), target);

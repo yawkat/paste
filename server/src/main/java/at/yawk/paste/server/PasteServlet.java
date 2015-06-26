@@ -31,7 +31,10 @@ public abstract class PasteServlet<D extends PasteData> implements Servlet {
         while (c != PasteServlet.class) {
             Type gen = c.getGenericSuperclass();
             if (gen instanceof ParameterizedType) {
-                dataType = (Class<D>) ((ParameterizedType) gen).getActualTypeArguments()[0];
+                Type arg = ((ParameterizedType) gen).getActualTypeArguments()[0];
+                if (arg instanceof Class) {
+                    dataType = (Class<D>) arg;
+                }
             }
             c = c.getSuperclass();
         }
@@ -107,7 +110,7 @@ public abstract class PasteServlet<D extends PasteData> implements Servlet {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.TYPE)
     @Inherited
-    protected @interface Suffix {
+    public @interface Suffix {
         @RegEx String value();
     }
 }
