@@ -3,6 +3,7 @@ package at.yawk.paste.server;
 import at.yawk.paste.model.Paste;
 import at.yawk.paste.server.db.Database;
 import io.undertow.server.HttpServerExchange;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.Iterator;
@@ -35,7 +36,7 @@ public class Request {
         }
     }
 
-    public void proceed() {
+    public void proceed() throws Exception {
         if (servletIterator.hasNext()) {
             servletIterator.next().handle(this);
         }
@@ -43,9 +44,17 @@ public class Request {
 
     @SneakyThrows
     public void render(String viewName, Object model) {
-        exchange.startBlocking();
-        Writer writer = new OutputStreamWriter(exchange.getOutputStream());
+        Writer writer = new OutputStreamWriter(getOutputStream());
         templateEngine.render(viewName, writer, model);
+    }
+
+    public void setContentLength(long contentLength) {
+        exchange.setResponseContentLength(contentLength);
+    }
+
+    public OutputStream getOutputStream() {
+        exchange.startBlocking();
+        return exchange.getOutputStream();
     }
 
     public void finish() {

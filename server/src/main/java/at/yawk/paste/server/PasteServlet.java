@@ -6,6 +6,9 @@ import at.yawk.paste.server.db.Database;
 import java.lang.annotation.*;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -40,15 +43,21 @@ public abstract class PasteServlet<D extends PasteData> implements Servlet {
 
     @Inject
     public void buildPattern(PasteIdSpecification specification) {
+        pattern = Pattern.compile("(" + specification.getPattern() + ")" + getSuffixPattern(),
+                                  Pattern.CASE_INSENSITIVE);
+    }
+
+    @RegEx
+    protected String getSuffixPattern() {
         Suffix suffixAnnotation = getClass().getAnnotation(Suffix.class);
         if (suffixAnnotation == null) {
             throw new NullPointerException(getClass().getName() + " is missing @Suffix annotation");
         }
-        pattern = Pattern.compile("(" + specification.getPattern() + ")" + suffixAnnotation.value());
+        return suffixAnnotation.value();
     }
 
     @Override
-    public void handle(Request request) {
+    public void handle(Request request) throws Exception {
         Matcher matcher = pattern.matcher(request.getExchange().getRelativePath());
         if (matcher.matches()) {
             handle0(request, matcher);
@@ -57,7 +66,7 @@ public abstract class PasteServlet<D extends PasteData> implements Servlet {
         }
     }
 
-    private void handle0(Request request, Matcher matcher) {
+    private void handle0(Request request, Matcher matcher) throws Exception {
         String id = matcher.group(1);
         Optional<Paste> paste = database.getPaste(id, false);
         if (paste == null) {
@@ -74,7 +83,18 @@ public abstract class PasteServlet<D extends PasteData> implements Servlet {
         }
 
         if (paste.isPresent() && dataType.isInstance(paste.get().getData())) {
-            handle(request, paste.get());
+            List<String> additionalGroups;
+            if (matcher.groupCount() <= 1) {
+                additionalGroups = Collections.emptyList();
+            } else {
+                additionalGroups = new ArrayList<>(matcher.groupCount() - 1);
+                for (int i = 2; i <= matcher.groupCount(); i++) {
+                    additionalGroups.add(matcher.group(i));
+                }
+            }
+
+            //noinspection unchecked
+            handle(request, paste.get(), (D) paste.get().getData(), additionalGroups);
             request.finish();
         } else {
             // try the other handlers
@@ -82,7 +102,7 @@ public abstract class PasteServlet<D extends PasteData> implements Servlet {
         }
     }
 
-    protected abstract void handle(Request request, Paste paste);
+    protected abstract void handle(Request request, Paste paste, D data, List<String> groups) throws Exception;
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.TYPE)

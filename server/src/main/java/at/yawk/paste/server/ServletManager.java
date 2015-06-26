@@ -27,7 +27,7 @@ class ServletManager {
         }));
     }
 
-    void handle(HttpServerExchange exchange) {
+    void handle(HttpServerExchange exchange) throws Exception {
         new Request(exchange, database, templateEngine, servlets.iterator()).proceed();
     }
 
