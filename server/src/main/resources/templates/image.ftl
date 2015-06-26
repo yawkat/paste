@@ -1,7 +1,20 @@
+<!DOCTYPE html>
 <html>
 <head>
     <title>Image</title>
     <#include "/head.ftl">
+    <style type="text/css">
+        body, html, div {
+            width: 100%;
+            height: 100%;
+        }
+        div {
+            max-width: 100%;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+        }
+    </style>
     <meta name="twitter:card" content="photo">
     <meta name="twitter:creator" content="@yawkat">
     <meta name="twitter:creator:id" content="463764901">
@@ -15,6 +28,6 @@
     <meta property="og:description" content="">
 </head>
 <body>
-    <img src="${id}.${data.format.defaultExtension}">
+    <div><img src="${id}.${data.format.defaultExtension}"></div>
 </body>
 </html>
