@@ -3,6 +3,7 @@ package at.yawk.paste.server;
 import at.yawk.paste.server.db.Database;
 import at.yawk.yarn.Component;
 import io.undertow.Undertow;
+import io.undertow.UndertowOptions;
 import io.undertow.server.HttpServerExchange;
 import java.util.Comparator;
 import java.util.List;
@@ -36,6 +37,7 @@ class ServletManager {
         Undertow undertow = Undertow.builder()
                 .addHttpListener(config.getPort(), config.getHost())
                 .setHandler(this::handle)
+                .setServerOption(UndertowOptions.RECORD_REQUEST_START_TIME, true)
                 .build();
 
         undertow.start();

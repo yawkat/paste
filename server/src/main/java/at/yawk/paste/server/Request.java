@@ -11,10 +11,12 @@ import java.util.Iterator;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author yawkat
  */
+@Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class Request {
     @Getter private final HttpServerExchange exchange;
@@ -40,6 +42,8 @@ public class Request {
     public void proceed() throws Exception {
         if (servletIterator.hasNext()) {
             servletIterator.next().handle(this);
+        } else {
+            log.warn("{} reached end of servlet pipeline", this);
         }
     }
 
@@ -47,6 +51,7 @@ public class Request {
     public void render(String viewName, Object model) {
         Writer writer = new OutputStreamWriter(getOutputStream());
         templateEngine.render(viewName, writer, model);
+        finish();
     }
 
     public void setContentLength(long contentLength) {
@@ -69,11 +74,25 @@ public class Request {
 
     public void finish() {
         exchange.endExchange();
+        if (log.isInfoEnabled()) {
+            long requestStartTime = exchange.getRequestStartTime();
+            if (requestStartTime == -1) {
+                log.info("{}", this);
+            } else {
+                log.info("{} : {} ns", this, String.format("%9d", System.nanoTime() - requestStartTime));
+            }
+        }
     }
 
     @Value
     private static class CacheEntry {
         String id;
         Optional<Paste> paste;
+    }
+
+    @Override
+    public String toString() {
+        return "[" + exchange.getSourceAddress() + " - " + exchange.getRequestMethod() + " " +
+               exchange.getRequestURI() + "]";
     }
 }

@@ -43,7 +43,6 @@ public class UploadServlet implements Servlet {
     @Override
     public void handle(Request request) throws Exception {
         // only accept POST /
-        System.out.println(request.getExchange().getRelativePath());
         if (!request.getExchange().getRequestMethod().equalToString("POST") ||
             !request.getExchange().getRelativePath().equals("/")) {
             request.proceed();
