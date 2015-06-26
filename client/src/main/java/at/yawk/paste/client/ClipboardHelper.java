@@ -3,6 +3,7 @@ package at.yawk.paste.client;
 import at.yawk.paste.model.ImageFormat;
 import at.yawk.paste.model.ImagePasteData;
 import at.yawk.paste.model.PasteData;
+import at.yawk.paste.model.TextPasteData;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
@@ -46,8 +47,17 @@ public class ClipboardHelper {
                 Image image = (Image) transferable.getTransferData(DataFlavor.imageFlavor);
                 return getImagePasteData(image);
             }
+            if (flavor.equals(DataFlavor.stringFlavor)) {
+                return getTextPasteData((String) transferable.getTransferData(DataFlavor.stringFlavor));
+            }
         }
         return null;
+    }
+
+    public TextPasteData getTextPasteData(String text) {
+        TextPasteData data = new TextPasteData();
+        data.setText(text);
+        return data;
     }
 
     public ImagePasteData getImagePasteData(Image image) throws IOException {
