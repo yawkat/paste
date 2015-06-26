@@ -46,7 +46,7 @@ public abstract class PasteServlet<D extends PasteData> implements Servlet {
 
     @Inject
     public void buildPattern(PasteIdSpecification specification) {
-        pattern = Pattern.compile("(" + specification.getPattern() + ")" + getSuffixPattern(),
+        pattern = Pattern.compile("/(" + specification.getPattern() + ")" + getSuffixPattern(),
                                   Pattern.CASE_INSENSITIVE);
     }
 

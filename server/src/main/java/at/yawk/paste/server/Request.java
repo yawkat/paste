@@ -3,6 +3,7 @@ package at.yawk.paste.server;
 import at.yawk.paste.model.Paste;
 import at.yawk.paste.server.db.Database;
 import io.undertow.server.HttpServerExchange;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -17,7 +18,7 @@ import lombok.*;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class Request {
     @Getter private final HttpServerExchange exchange;
-    private final Database database;
+    @Getter private final Database database;
     private final TemplateEngine templateEngine;
     private final Iterator<Servlet> servletIterator;
 
@@ -52,8 +53,17 @@ public class Request {
         exchange.setResponseContentLength(contentLength);
     }
 
+    public InputStream getInputStream() {
+        if (!exchange.isBlocking()) {
+            exchange.startBlocking();
+        }
+        return exchange.getInputStream();
+    }
+
     public OutputStream getOutputStream() {
-        exchange.startBlocking();
+        if (!exchange.isBlocking()) {
+            exchange.startBlocking();
+        }
         return exchange.getOutputStream();
     }
 
