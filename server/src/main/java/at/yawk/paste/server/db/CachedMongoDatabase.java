@@ -86,4 +86,9 @@ public class CachedMongoDatabase implements Database {
         }
         return paste;
     }
+
+    void upsert(Paste paste) {
+        collection.removeById(paste.getId());
+        collection.insert(paste);
+    }
 }
