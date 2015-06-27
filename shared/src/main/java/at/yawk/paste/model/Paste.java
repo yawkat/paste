@@ -1,6 +1,7 @@
 package at.yawk.paste.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,5 +18,6 @@ import lombok.experimental.Wither;
 public class Paste {
     // serialize to _id for mongo
     @JsonProperty("_id") private String id;
+    private Instant time;
     private PasteData data;
 }

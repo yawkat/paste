@@ -17,6 +17,13 @@ import java.nio.file.Paths;
 @Component
 class ConfigProvider {
     @Provides
+    ObjectMapper objectMapper() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.findAndRegisterModules();
+        return objectMapper;
+    }
+
+    @Provides
     Config config() {
         Path configPath = Paths.get("config.yml");
 
@@ -25,6 +32,7 @@ class ConfigProvider {
         } else {
             // load from file
             ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+            objectMapper.findAndRegisterModules();
             try (InputStream in = Files.newInputStream(configPath)) {
                 return objectMapper.readValue(in, Config.class);
             } catch (IOException e) {

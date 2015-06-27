@@ -5,6 +5,7 @@ import at.yawk.paste.model.PasteData;
 import at.yawk.paste.server.Config;
 import at.yawk.paste.server.PasteIdSpecification;
 import at.yawk.yarn.Component;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.mongodb.DB;
@@ -33,7 +34,7 @@ public class CachedMongoDatabase implements Database {
     private JacksonDBCollection<Paste, String> collection;
 
     @Inject
-    void connect(Config config) {
+    void connect(Config config, ObjectMapper objectMapper) {
         MongoConfig mongoConfig = config.getMongoConfig();
         MongoClient client = new MongoClient(mongoConfig.getServers());
 
@@ -42,7 +43,8 @@ public class CachedMongoDatabase implements Database {
         collection = JacksonDBCollection.wrap(
                 db.getCollection(mongoConfig.getCollection()),
                 Paste.class,
-                String.class
+                String.class,
+                objectMapper
         );
     }
 

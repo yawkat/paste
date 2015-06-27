@@ -27,7 +27,12 @@ public class UploadServlet implements Servlet {
     private PublicKey publicKey;
     @Inject Config config;
 
-    private final ObjectMapper msgPackMapper = new ObjectMapper(new MessagePackFactory());
+    private final ObjectMapper msgPackMapper;
+
+    {
+        msgPackMapper = new ObjectMapper(new MessagePackFactory());
+        msgPackMapper.findAndRegisterModules();
+    }
 
     @PostConstruct
     void loadKey() {

@@ -10,6 +10,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.Iterator;
 
@@ -20,9 +21,11 @@ class Import {
     private static final Charset CHARSET = StandardCharsets.UTF_8;
 
     public static void main(String[] args) throws IOException {
-        CachedMongoDatabase db = new CachedMongoDatabase();
-        db.connect(new Config());
         ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.findAndRegisterModules();
+
+        CachedMongoDatabase db = new CachedMongoDatabase();
+        db.connect(new Config(), objectMapper);
 
         Iterator<String> iterator = Files.lines(Paths.get("/home/yawkat/.config/herbstluftwm/screenshot/db.json"))
                 .iterator();
@@ -34,8 +37,6 @@ class Import {
             JsonNode value = node.get("value");
 
             if (value == null || value.get("type") == null) { continue; }
-
-            // todo: time
 
             PasteData data;
 
@@ -81,6 +82,8 @@ class Import {
 
             Paste paste = new Paste();
             paste.setId(node.get("key").asText());
+            double time = value.get("time").asDouble();
+            paste.setTime(Instant.ofEpochSecond((long) time, (long) (time * 1_000_000_000L)));
             paste.setData(data);
             db.upsert(paste);
         }

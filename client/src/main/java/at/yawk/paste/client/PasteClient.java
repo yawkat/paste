@@ -27,6 +27,7 @@ public class PasteClient {
         this.config = config;
         this.jsonObjectMapper = jsonObjectMapper;
         this.msgpackObjectMapper = new ObjectMapper(new MessagePackFactory());
+        this.msgpackObjectMapper.findAndRegisterModules();
     }
 
     @SneakyThrows(NoSuchAlgorithmException.class)
