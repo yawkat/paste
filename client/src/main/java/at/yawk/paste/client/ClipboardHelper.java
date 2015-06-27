@@ -15,11 +15,23 @@ import java.awt.image.RenderedImage;
 import java.awt.image.VolatileImage;
 import java.awt.image.renderable.RenderableImage;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.charset.UnsupportedCharsetException;
+import java.nio.file.Files;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nullable;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import org.mozilla.intl.chardet.nsDetector;
 import sun.awt.image.ToolkitImage;
 
 /**
@@ -50,14 +62,80 @@ public class ClipboardHelper {
             if (flavor.equals(DataFlavor.stringFlavor)) {
                 return getTextPasteData((String) transferable.getTransferData(DataFlavor.stringFlavor));
             }
+            if (flavor.equals(DataFlavor.javaFileListFlavor)) {
+                //noinspection unchecked
+                List<File> files = (List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
+                if (files.size() == 1) {
+                    return getFilePasteData(files.get(0));
+                }
+            }
         }
         return null;
+    }
+
+    public PasteData getFilePasteData(File file) throws IOException {
+        if (!file.exists() || file.isDirectory()) { return null; }
+
+        try {
+            ImagePasteData imageData = getImagePasteData(file);
+            if (imageData != null) {
+                return imageData;
+            }
+        } catch (IOException ignored) {}
+
+        byte[] bytes = Files.readAllBytes(file.toPath());
+
+        nsDetector charsetDetector = new nsDetector();
+
+        AtomicReference<String> charsetName = new AtomicReference<>();
+        charsetDetector.Init(name -> charsetName.compareAndSet(null, name));
+
+        if (!charsetDetector.isAscii(bytes, bytes.length)) {
+            charsetDetector.DoIt(bytes, bytes.length, false);
+        }
+
+        Charset charset = StandardCharsets.US_ASCII;
+        if (charsetName.get() != null) {
+            try {
+                charset = Charset.forName(charsetName.get());
+            } catch (UnsupportedCharsetException ignored) {}
+        }
+
+        return getTextPasteData(new String(bytes, charset));
     }
 
     public TextPasteData getTextPasteData(String text) {
         TextPasteData data = new TextPasteData();
         data.setText(text);
         return data;
+    }
+
+    public ImagePasteData getImagePasteData(File file) throws IOException {
+        ImageFormat supportedFormat = null;
+        try (ImageInputStream input = ImageIO.createImageInputStream(file)) {
+            Iterator<ImageReader> imageReaders = ImageIO.getImageReaders(input);
+            while (imageReaders.hasNext() && supportedFormat == null) {
+                String formatName = imageReaders.next().getFormatName();
+                switch (formatName.toLowerCase()) {
+                case "png":
+                    supportedFormat = ImageFormat.PNG;
+                    break;
+                case "jpeg":
+                    supportedFormat = ImageFormat.JPEG;
+                    break;
+                }
+            }
+        }
+
+        if (supportedFormat == null) {
+            BufferedImage image = ImageIO.read(file);
+            return image == null ? null : getImagePasteData(image);
+        } else {
+            ImagePasteData data = new ImagePasteData();
+            data.setFormat(supportedFormat);
+            data.setData(Files.readAllBytes(file.toPath()));
+            return data;
+        }
     }
 
     public ImagePasteData getImagePasteData(Image image) throws IOException {
