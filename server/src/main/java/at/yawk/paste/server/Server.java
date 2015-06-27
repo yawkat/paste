@@ -1,18 +1,45 @@
 package at.yawk.paste.server;
 
-import at.yawk.yarn.ComponentScan;
-import at.yawk.yarn.EntryPoint;
-import at.yawk.yarn.Yarn;
+import at.yawk.paste.server.db.Database;
+import at.yawk.yarn.Component;
+import io.undertow.Undertow;
+import io.undertow.UndertowOptions;
+import io.undertow.server.HttpServerExchange;
+import java.util.Comparator;
+import java.util.List;
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 
 /**
  * @author yawkat
  */
-@EntryPoint
-@ComponentScan
-public abstract class Server {
-    protected Server() {}
+@Component
+class Server {
+    @Inject List<Servlet> servlets;
+    @Inject Config config;
+    @Inject TemplateEngine templateEngine;
+    @Inject Database database;
 
-    public static void main(String[] args) {
-        Yarn.build(Server.class);
+    @PostConstruct
+    void sortServlets() {
+        servlets.sort(Comparator.<Servlet>comparingInt(s -> {
+            Servlet.Priority priority = s.getClass().getAnnotation(Servlet.Priority.class);
+            return priority == null ? 0 : priority.value();
+        }));
+    }
+
+    void handle(HttpServerExchange exchange) throws Exception {
+        new Request(exchange, database, templateEngine, servlets.iterator()).proceed();
+    }
+
+    @PostConstruct
+    void start() {
+        Undertow undertow = Undertow.builder()
+                .addHttpListener(config.getPort(), config.getHost())
+                .setHandler(this::handle)
+                .setServerOption(UndertowOptions.RECORD_REQUEST_START_TIME, true)
+                .build();
+
+        undertow.start();
     }
 }
