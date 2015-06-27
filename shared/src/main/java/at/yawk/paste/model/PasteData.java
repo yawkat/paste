@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         @JsonSubTypes.Type(value = TextPasteData.class, name = "text"),
         @JsonSubTypes.Type(value = SVGPasteData.class, name = "svg"),
         @JsonSubTypes.Type(value = VideoPasteData.class, name = "video"),
+        @JsonSubTypes.Type(value = URLPasteData.class, name = "url"),
 })
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
