@@ -17,6 +17,8 @@ import org.msgpack.jackson.dataformat.MessagePackFactory;
  * @author yawkat
  */
 public class PasteClient {
+    private static final int CHUNK_SIZE = 4096;
+
     private final Config config;
     private final ObjectMapper jsonObjectMapper;
     private final ObjectMapper msgpackObjectMapper;
@@ -53,13 +55,18 @@ public class PasteClient {
         return keyPair;
     }
 
+    public String save(PasteData data) throws IOException {
+        return save(data, UploadProgressListener.NOOP);
+    }
+
     /**
      * Save the given paste data.
      *
      * @return The full URL where this paste was saved.
      */
-    public String save(PasteData data) throws IOException {
+    public String save(PasteData data, UploadProgressListener progressListener) throws IOException {
         byte[] bytes = msgpackObjectMapper.writeValueAsBytes(data);
+        progressListener.update(0, bytes.length);
 
         URL url = config.getRemote();
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -90,7 +97,13 @@ public class PasteClient {
         connection.setInstanceFollowRedirects(false);
 
         connection.setFixedLengthStreamingMode(bytes.length);
-        connection.getOutputStream().write(bytes);
+
+        int off = 0;
+        while (off < bytes.length) {
+            connection.getOutputStream().write(bytes, off, Math.min(bytes.length - off, CHUNK_SIZE));
+            off += CHUNK_SIZE;
+            progressListener.update(off, bytes.length);
+        }
         connection.getOutputStream().close();
 
         int responseCode = connection.getResponseCode();
