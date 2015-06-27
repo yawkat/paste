@@ -93,6 +93,12 @@ public class PasteClient {
         connection.getOutputStream().write(bytes);
         connection.getOutputStream().close();
 
+        int responseCode = connection.getResponseCode();
+        if (responseCode >= 300) {
+            connection.disconnect();
+            throw new IOException("Status: " + responseCode);
+        }
+
         String targetLocation = connection.getHeaderField("Location");
 
         connection.disconnect();
