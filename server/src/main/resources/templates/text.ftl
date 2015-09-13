@@ -176,7 +176,7 @@
 <body>
     <ol id="line_numbers">
         <#list data.lines as line>
-            <li class="line_number">${line_index}</li>
+            <li class="line_number">${line_index + 1}</li>
         </#list>
     </ol>
     <pre><code id="code"><#list data.lines as line>${line?html}<br></#list></code></pre>
