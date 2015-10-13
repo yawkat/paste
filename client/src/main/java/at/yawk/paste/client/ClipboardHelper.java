@@ -1,9 +1,6 @@
 package at.yawk.paste.client;
 
-import at.yawk.paste.model.ImageFormat;
-import at.yawk.paste.model.ImagePasteData;
-import at.yawk.paste.model.PasteData;
-import at.yawk.paste.model.TextPasteData;
+import at.yawk.paste.model.*;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
@@ -18,6 +15,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
@@ -60,7 +59,10 @@ public class ClipboardHelper {
                 return getImagePasteData(image);
             }
             if (flavor.equals(DataFlavor.stringFlavor)) {
-                return getTextPasteData((String) transferable.getTransferData(DataFlavor.stringFlavor));
+                String text = (String) transferable.getTransferData(DataFlavor.stringFlavor);
+                URLPasteData urlPasteData = getUrlPasteData(text);
+                if (urlPasteData != null) { return urlPasteData; }
+                return getTextPasteData(text);
             }
             if (flavor.equals(DataFlavor.javaFileListFlavor)) {
                 //noinspection unchecked
@@ -110,6 +112,20 @@ public class ClipboardHelper {
         return data;
     }
 
+    @Nullable
+    public URLPasteData getUrlPasteData(String url) {
+        try {
+            URL o = new URL(url);
+
+            URLPasteData data = new URLPasteData();
+            data.setUrl(o);
+            return data;
+        } catch (MalformedURLException e) {
+            return null;
+        }
+    }
+
+    @Nullable
     public ImagePasteData getImagePasteData(File file) throws IOException {
         ImageFormat supportedFormat = null;
         try (ImageInputStream input = ImageIO.createImageInputStream(file)) {
