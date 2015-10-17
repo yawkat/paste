@@ -10,3 +10,4 @@
     }
 </style>
 <meta property="robots" content="noindex">
+<meta charset="UTF-8">
