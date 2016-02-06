@@ -14,6 +14,10 @@
             justify-content:center;
             align-items:center;
         }
+        img {
+            max-width: 100%;
+            max-height: 100%;
+        }
     </style>
     <meta name="twitter:card" content="photo">
     <meta name="twitter:creator" content="@yawkat">
