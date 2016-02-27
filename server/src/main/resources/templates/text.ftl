@@ -29,6 +29,7 @@
             }
         }
     };
+    <#if data.highlightPreference != "none">
     window.onload = function() {
         var blocks = document.getElementsByTagName("code");
         for (var i = blocks.length - 1; i >= 0; i--) {
@@ -36,6 +37,7 @@
             hljs.highlightBlock(blocks[i]);
         }
     }
+    </#if>
 </script>
 <style type="text/css">
     #code {
@@ -166,6 +168,7 @@
 </style>
 </head>
 <body>
-    <code id="code"><#list data.lines as line><span>${line?html}<br></span></#list></code>
+    <code id="code" class="${data.highlightPreference!''?html}"
+    ><#list data.lines as line><span>${line?html}<br></span></#list></code>
 </body>
 </html>

@@ -6,6 +6,7 @@ import at.yawk.paste.model.TextPasteData;
 import at.yawk.paste.server.PasteServlet;
 import at.yawk.paste.server.Request;
 import java.util.List;
+import javax.annotation.Nullable;
 import lombok.Value;
 
 /**
@@ -15,11 +16,18 @@ import lombok.Value;
 public class TextDisplayServlet extends PasteServlet<TextPasteData> {
     @Override
     protected void handle(Request request, Paste paste, TextPasteData data, List<String> groups) throws Exception {
-        request.render("text", paste.withData(new SplittedText(data.getText().split("\n"))));
+        request.render("text", paste.withData(new SplittedText(
+                request.getParameter("highlight")
+                        // saniztize
+                        .map(lang -> lang.replaceAll("[^a-zA-Z0-9\\-_+]", ""))
+                        .orElse(null),
+                data.getText().split("\n")
+        )));
     }
 
     @Value
     public static class SplittedText implements PasteData {
+        @Nullable String highlightPreference;
         String[] lines;
     }
 }

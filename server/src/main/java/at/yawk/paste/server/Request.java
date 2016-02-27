@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -70,6 +71,11 @@ public class Request {
             exchange.startBlocking();
         }
         return exchange.getOutputStream();
+    }
+
+    public Optional<String> getParameter(String key) {
+        Deque<String> parameters = exchange.getQueryParameters().get(key);
+        return parameters == null || parameters.isEmpty() ? Optional.empty() : Optional.of(parameters.peek());
     }
 
     public void finish() {
