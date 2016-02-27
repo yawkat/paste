@@ -3,7 +3,10 @@
 <head>
     <title>Code</title>
     <#include "/head.ftl">
-<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/highlight.min.js"></script>
+    <#assign do_highlight=((data.highlightPreference!"") != "none")>
+    <#if do_highlight>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/highlight.min.js"></script>
+    </#if>
 <script type="text/javascript">
     // make ctrl+a only select code
     function selectText(el) {
@@ -29,7 +32,7 @@
             }
         }
     };
-    <#if (data.highlightPreference!"") != "none">
+    <#if do_highlight>
     window.onload = function() {
         var blocks = document.getElementsByTagName("code");
         for (var i = blocks.length - 1; i >= 0; i--) {
