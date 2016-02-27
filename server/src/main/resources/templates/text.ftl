@@ -29,7 +29,7 @@
             }
         }
     };
-    <#if data.highlightPreference!"" != "none">
+    <#if (data.highlightPreference!"") != "none">
     window.onload = function() {
         var blocks = document.getElementsByTagName("code");
         for (var i = blocks.length - 1; i >= 0; i--) {
