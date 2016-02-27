@@ -78,9 +78,7 @@
         color: #839496;
         -webkit-text-size-adjust: none;
     }
-    .hljs,
-    /* specify id here to gain position above wrapping elements */
-    #code .hljs-title {
+    .hljs {
         color: #839496;
     }
     .hljs-comment,
@@ -95,6 +93,8 @@
     .method,
     .hljs-addition,
     .css .hljs-tag,
+    .html .hljs-tag,
+    .html .hljs-title,
     .hljs-request,
     .hljs-status,
     .nginx .hljs-title {
