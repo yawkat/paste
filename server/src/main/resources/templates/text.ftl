@@ -28,7 +28,7 @@
                 e.preventDefault();
             }
         }
-    }
+    };
     window.onload = function() {
         var blocks = document.getElementsByTagName("code");
         for (var i = blocks.length - 1; i >= 0; i--) {
@@ -38,40 +38,32 @@
     }
 </script>
 <style type="text/css">
-    code, .line_number {
-        font-family: "Source Code Pro", monospace;
-        
-        /* 
-         * Firefox seems to have a problem with relative sizes 
-         * in <pre> so I have to specify this in pixels.
-         */
-        font-size: 16px;
-    }
-    #content {
-        width: 100%;
-    }
     #code {
-        margin-left: 2.5em;
-        white-space: pre;
+        white-space: pre-wrap;
+        display: block;
+        color: #839496;
+        padding-left: 4em;
+
+        font-family: "Source Code Pro", monospace;
+        font-size: 16px;
+
+        counter-reset: line;
+    }
+    #code > span:before {
+        content: counter(line, decimal);
+        counter-increment: line;
+        float: left;
+        width: 3em;
+        text-align: right;
+        margin-right: 1em;
+        color: #586e75;
+
+        position: absolute;
+        left: 0;
     }
     body {
         background-color: #002b36;
         color: #586e75;
-    }
-    #timestamp {
-        right: 0;
-    }
-    #line_numbers {
-        list-style-type: none;
-        position: absolute;
-        width: 2em;
-        padding-top: 8px;
-    }
-    .line_number {
-        display: block;
-        margin: 0;
-        padding: 0;
-        text-align: right;
     }
     .hljs {
         display: block;
@@ -174,11 +166,6 @@
 </style>
 </head>
 <body>
-    <ol id="line_numbers">
-        <#list data.lines as line>
-            <li class="line_number">${line_index + 1}</li>
-        </#list>
-    </ol>
-    <pre><code id="code"><#list data.lines as line>${line?html}<br></#list></code></pre>
+    <code id="code"><#list data.lines as line><span>${line?html}<br></span></#list></code>
 </body>
 </html>
