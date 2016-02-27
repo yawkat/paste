@@ -19,6 +19,7 @@ public class Main {
                 injector.getInstance(NotFoundServlet.class),
                 injector.getInstance(RawImageServlet.class),
                 injector.getInstance(RawSVGServlet.class),
+                injector.getInstance(RawTextServlet.class),
                 injector.getInstance(RawVideoServlet.class),
                 injector.getInstance(SVGDisplayServlet.class),
                 injector.getInstance(TextDisplayServlet.class),
