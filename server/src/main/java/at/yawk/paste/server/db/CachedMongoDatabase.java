@@ -4,7 +4,6 @@ import at.yawk.paste.model.Paste;
 import at.yawk.paste.model.PasteData;
 import at.yawk.paste.server.Config;
 import at.yawk.paste.server.PasteIdSpecification;
-import at.yawk.yarn.Component;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -18,13 +17,14 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.mongojack.JacksonDBCollection;
 
 /**
  * @author yawkat
  */
-@Component
-public class CachedMongoDatabase implements Database {
+@Singleton
+class CachedMongoDatabase implements Database {
     private final Cache<String, Optional<Paste>> pasteCache = CacheBuilder.newBuilder()
             .softValues().expireAfterWrite(1, TimeUnit.MINUTES)
             .build();

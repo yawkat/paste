@@ -5,7 +5,6 @@ import at.yawk.paste.model.PasteData;
 import at.yawk.paste.server.Config;
 import at.yawk.paste.server.Request;
 import at.yawk.paste.server.Servlet;
-import at.yawk.yarn.Component;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.ByteStreams;
 import io.undertow.util.HeaderValues;
@@ -15,17 +14,18 @@ import java.nio.file.Files;
 import java.security.*;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.msgpack.jackson.dataformat.MessagePackFactory;
 
 /**
  * @author yawkat
  */
-@Component
+@Singleton
 public class UploadServlet implements Servlet {
     private PublicKey publicKey;
-    @Inject Config config;
+
+    Config config;
 
     private final ObjectMapper msgPackMapper;
 
@@ -34,8 +34,9 @@ public class UploadServlet implements Servlet {
         msgPackMapper.findAndRegisterModules();
     }
 
-    @PostConstruct
-    void loadKey() {
+    @Inject
+    public void setConfig(Config config) {
+        this.config = config;
         if (Files.exists(config.getKeyLocation())) {
             try {
                 publicKey = decodePublicKey(Files.readAllBytes(config.getKeyLocation()));

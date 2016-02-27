@@ -1,27 +1,25 @@
 package at.yawk.paste.server;
 
 import at.yawk.paste.server.db.Database;
-import at.yawk.yarn.Component;
 import io.undertow.Undertow;
 import io.undertow.UndertowOptions;
 import io.undertow.server.HttpServerExchange;
 import java.util.Comparator;
 import java.util.List;
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 /**
  * @author yawkat
  */
-@Component
 class Server {
-    @Inject List<Servlet> servlets;
     @Inject Config config;
     @Inject TemplateEngine templateEngine;
     @Inject Database database;
 
-    @PostConstruct
-    void sortServlets() {
+    private List<Servlet> servlets;
+
+    void setServlets(List<Servlet> servlets) {
+        this.servlets = servlets;
         servlets.sort(Comparator.<Servlet>comparingInt(s -> {
             Servlet.Priority priority = s.getClass().getAnnotation(Servlet.Priority.class);
             return priority == null ? 0 : priority.value();
@@ -32,7 +30,6 @@ class Server {
         new Request(exchange, database, templateEngine, servlets.iterator()).proceed();
     }
 
-    @PostConstruct
     void start() {
         Undertow undertow = Undertow.builder()
                 .addHttpListener(config.getPort(), config.getHost())

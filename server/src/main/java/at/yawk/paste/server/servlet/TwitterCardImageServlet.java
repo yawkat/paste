@@ -3,7 +3,6 @@ package at.yawk.paste.server.servlet;
 import at.yawk.paste.model.ImageFormat;
 import at.yawk.paste.model.ImagePasteData;
 import at.yawk.paste.server.Request;
-import at.yawk.yarn.Component;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -12,7 +11,6 @@ import java.io.IOException;
 /**
  * @author yawkat
  */
-@Component
 public class TwitterCardImageServlet extends RawImageServlet {
     @Override
     protected String getSuffixPattern() {

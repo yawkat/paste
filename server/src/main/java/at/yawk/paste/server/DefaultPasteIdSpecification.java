@@ -1,12 +1,10 @@
 package at.yawk.paste.server;
 
-import at.yawk.yarn.Component;
 import java.util.Random;
 
 /**
  * @author yawkat
  */
-@Component
 class DefaultPasteIdSpecification implements PasteIdSpecification {
     private static final char[] VALID_CHARACTERS;
     private static final int LENGTH = 4;

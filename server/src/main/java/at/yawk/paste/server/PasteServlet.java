@@ -22,7 +22,7 @@ public abstract class PasteServlet<D extends PasteData> implements Servlet {
     private final Class<D> dataType;
     private Pattern pattern;
 
-    @Inject public Database database;
+    @Inject Database database;
 
     @SuppressWarnings("unchecked")
     public PasteServlet() {

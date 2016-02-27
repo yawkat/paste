@@ -2,12 +2,14 @@ package at.yawk.paste.server.db;
 
 import at.yawk.paste.model.Paste;
 import at.yawk.paste.model.PasteData;
+import com.google.inject.ImplementedBy;
 import java.util.Optional;
 import javax.annotation.Nullable;
 
 /**
  * @author yawkat
  */
+@ImplementedBy(CachedMongoDatabase.class)
 public interface Database {
     /**
      * Get the paste with the given ID. May block only if the block parameter is true.

@@ -5,14 +5,12 @@ import at.yawk.paste.model.PasteData;
 import at.yawk.paste.model.TextPasteData;
 import at.yawk.paste.server.PasteServlet;
 import at.yawk.paste.server.Request;
-import at.yawk.yarn.Component;
 import java.util.List;
 import lombok.Value;
 
 /**
  * @author yawkat
  */
-@Component
 @PasteServlet.Suffix("")
 public class TextDisplayServlet extends PasteServlet<TextPasteData> {
     @Override

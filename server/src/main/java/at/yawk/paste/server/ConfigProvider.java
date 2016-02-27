@@ -1,9 +1,9 @@
 package at.yawk.paste.server;
 
-import at.yawk.yarn.Component;
-import at.yawk.yarn.Provides;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -14,8 +14,7 @@ import java.nio.file.Paths;
 /**
  * @author yawkat
  */
-@Component
-class ConfigProvider {
+class ConfigProvider extends AbstractModule {
     @Provides
     ObjectMapper objectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -39,5 +38,10 @@ class ConfigProvider {
                 throw new UncheckedIOException(e);
             }
         }
+    }
+
+    @Override
+    protected void configure() {
+
     }
 }

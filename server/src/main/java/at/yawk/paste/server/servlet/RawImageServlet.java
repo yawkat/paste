@@ -5,7 +5,6 @@ import at.yawk.paste.model.ImagePasteData;
 import at.yawk.paste.model.Paste;
 import at.yawk.paste.server.PasteServlet;
 import at.yawk.paste.server.Request;
-import at.yawk.yarn.Component;
 import io.undertow.util.HttpString;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -17,7 +16,6 @@ import java.util.stream.Collectors;
 /**
  * @author yawkat
  */
-@Component
 public class RawImageServlet extends PasteServlet<ImagePasteData> {
     @Override
     protected String getSuffixPattern() {

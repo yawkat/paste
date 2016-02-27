@@ -4,7 +4,6 @@ import at.yawk.paste.model.Paste;
 import at.yawk.paste.model.SVGPasteData;
 import at.yawk.paste.server.PasteServlet;
 import at.yawk.paste.server.Request;
-import at.yawk.yarn.Component;
 import io.undertow.util.HttpString;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -12,7 +11,6 @@ import java.util.List;
 /**
  * @author yawkat
  */
-@Component
 @PasteServlet.Suffix("\\.svg")
 public class RawSVGServlet extends PasteServlet<SVGPasteData> {
     @Override
