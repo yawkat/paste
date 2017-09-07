@@ -2,10 +2,8 @@ package at.yawk.paste.server;
 
 import at.yawk.paste.server.db.Database;
 import io.undertow.Undertow;
-import io.undertow.UndertowLogger;
 import io.undertow.UndertowOptions;
 import io.undertow.server.HttpServerExchange;
-import io.undertow.util.StatusCodes;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -35,17 +33,11 @@ class Server {
     }
 
     void handle(HttpServerExchange exchange) throws Exception {
-        executor.execute(() -> {
-            try {
-                new Request(exchange, database, templateEngine, servlets.iterator()).proceed();
-            } catch (Exception e) {
-                if (!exchange.isResponseStarted()) {
-                    exchange.setResponseCode(StatusCodes.INTERNAL_SERVER_ERROR);
-                }
-                exchange.endExchange();
-                e.printStackTrace();
-            }
-        });
+        if (exchange.isInIoThread()) {
+            exchange.dispatch(this::handle);
+            return;
+        }
+        new Request(exchange, database, templateEngine, servlets.iterator()).proceed();
     }
 
     void start() {
