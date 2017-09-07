@@ -5,7 +5,7 @@
     <#include "/head.ftl">
     <#assign do_highlight=((data.highlightPreference!"") != "none")>
     <#if do_highlight>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/highlight.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.2.0/highlight.min.js"></script>
     </#if>
 <script type="text/javascript">
     // make ctrl+a only select code

@@ -24,10 +24,10 @@
     <meta name="twitter:creator:id" content="463764901">
     <meta property="og:title" content="Screenshot">
     <meta property="og:type" content="article">
-    <meta content="http://s.yawk.at/${id}.twitter.${data.format.defaultExtension}" name="twitter:image">
-    <meta content="http://s.yawk.at/${id}" property="og:url">
-    <meta content="http://s.yawk.at/${id}.${data.format.defaultExtension}" property="og:image">
-    <link href="http://s.yawk.at/${id}.${data.format.defaultExtension}" rel="image_src">
+    <meta content="https://s.yawk.at/${id}.twitter.${data.format.defaultExtension}" name="twitter:image">
+    <meta content="https://s.yawk.at/${id}" property="og:url">
+    <meta content="https://s.yawk.at/${id}.${data.format.defaultExtension}" property="og:image">
+    <link href="https://s.yawk.at/${id}.${data.format.defaultExtension}" rel="image_src">
     <meta property="og:site_name" content="yawk.at">
     <meta property="og:description" content="">
 </head>
