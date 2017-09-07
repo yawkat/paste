@@ -2,10 +2,16 @@ package at.yawk.paste.server;
 
 import at.yawk.paste.server.db.Database;
 import io.undertow.Undertow;
+import io.undertow.UndertowLogger;
 import io.undertow.UndertowOptions;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.util.StatusCodes;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 
 /**
@@ -15,6 +21,8 @@ class Server {
     @Inject Config config;
     @Inject TemplateEngine templateEngine;
     @Inject Database database;
+
+    private final Executor executor = new ThreadPoolExecutor(4, 10, 1, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
 
     private List<Servlet> servlets;
 
@@ -27,7 +35,17 @@ class Server {
     }
 
     void handle(HttpServerExchange exchange) throws Exception {
-        new Request(exchange, database, templateEngine, servlets.iterator()).proceed();
+        executor.execute(() -> {
+            try {
+                new Request(exchange, database, templateEngine, servlets.iterator()).proceed();
+            } catch (Exception e) {
+                if (!exchange.isResponseStarted()) {
+                    exchange.setResponseCode(StatusCodes.INTERNAL_SERVER_ERROR);
+                }
+                exchange.endExchange();
+                e.printStackTrace();
+            }
+        });
     }
 
     void start() {
