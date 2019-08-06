@@ -7,7 +7,7 @@ import java.util.Random;
  */
 class DefaultPasteIdSpecification implements PasteIdSpecification {
     private static final char[] VALID_CHARACTERS;
-    private static final int LENGTH = 4;
+    private static final int LENGTH = 8;
 
     static {
         String alphabet = "abcdefghijklmnopqrstuvwxyz";
