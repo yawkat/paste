@@ -12,7 +12,12 @@
         <module>shared</module>
         <module>server</module>
         <module>client</module>
+        <module>migration</module>
     </modules>
+
+    <properties>
+        <jackson.version>2.11.0</jackson.version>
+    </properties>
 
     <repositories>
         <repository>
@@ -26,7 +31,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.16.4</version>
+            <version>1.18.12</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

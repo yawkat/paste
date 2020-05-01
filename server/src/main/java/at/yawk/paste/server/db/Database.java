@@ -9,7 +9,7 @@ import javax.annotation.Nullable;
 /**
  * @author yawkat
  */
-@ImplementedBy(CachedMongoDatabase.class)
+@ImplementedBy(CachedSqlDatabase.class)
 public interface Database {
     /**
      * Get the paste with the given ID. May block only if the block parameter is true.
