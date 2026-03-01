@@ -22,6 +22,7 @@ public abstract class PasteServlet<D extends PasteData> implements Servlet {
     private Pattern pattern;
 
     @Inject Database database;
+    @Inject UmamiClient umamiClient;
 
     @SuppressWarnings("unchecked")
     public PasteServlet() {
@@ -96,6 +97,7 @@ public abstract class PasteServlet<D extends PasteData> implements Servlet {
                 }
             }
 
+            umamiClient.trackView(request.getExchange(), id);
             //noinspection unchecked
             handle(request, paste.get(), (D) paste.get().getData(), additionalGroups);
             request.finish();

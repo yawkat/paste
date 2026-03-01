@@ -14,4 +14,6 @@ public class Config {
     private int port = 8080;
     private Path keyLocation = Paths.get("key.pub");
     private Map<String, String> sqlConfig;
+    private String umamiUrl;
+    private String umamiWebsiteId;
 }
