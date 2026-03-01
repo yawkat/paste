@@ -31,7 +31,6 @@ import javax.imageio.stream.ImageInputStream;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.mozilla.intl.chardet.nsDetector;
-import sun.awt.image.ToolkitImage;
 
 /**
  * @author yawkat
@@ -162,8 +161,6 @@ public class ClipboardHelper {
             renderedImage = ((RenderableImage) image).createDefaultRendering();
         } else if (image instanceof VolatileImage) {
             renderedImage = ((VolatileImage) image).getSnapshot();
-        } else if (image instanceof ToolkitImage) {
-            renderedImage = ((ToolkitImage) image).getBufferedImage();
         } else {
             int width = image.getWidth(null);
             int height = image.getHeight(null);

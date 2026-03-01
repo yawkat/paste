@@ -14,8 +14,8 @@ import java.nio.file.Files;
 import java.security.*;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.msgpack.jackson.dataformat.MessagePackFactory;
 
 /**

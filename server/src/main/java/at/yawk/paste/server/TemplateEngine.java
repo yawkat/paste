@@ -6,7 +6,7 @@ import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
 import java.io.IOException;
 import java.io.Writer;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.SneakyThrows;
 
 /**

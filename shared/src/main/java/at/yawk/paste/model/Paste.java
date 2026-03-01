@@ -6,7 +6,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.experimental.Wither;
+import lombok.With;
 
 /**
  * @author yawkat
@@ -14,7 +14,7 @@ import lombok.experimental.Wither;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Wither
+@With
 public class Paste {
     // serialize to _id for mongo
     @JsonProperty("_id") private String id;

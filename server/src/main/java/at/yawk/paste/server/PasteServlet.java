@@ -12,8 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.annotation.RegEx;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * @author yawkat
@@ -50,7 +49,6 @@ public abstract class PasteServlet<D extends PasteData> implements Servlet {
                                   Pattern.CASE_INSENSITIVE);
     }
 
-    @RegEx
     protected String getSuffixPattern() {
         Suffix suffixAnnotation = getClass().getAnnotation(Suffix.class);
         if (suffixAnnotation == null) {
@@ -113,6 +111,6 @@ public abstract class PasteServlet<D extends PasteData> implements Servlet {
     @Target(ElementType.TYPE)
     @Inherited
     public @interface Suffix {
-        @RegEx String value();
+        String value();
     }
 }

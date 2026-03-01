@@ -6,8 +6,8 @@ import at.yawk.paste.server.Config;
 import at.yawk.paste.server.PasteIdSpecification;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import java.io.IOException;
@@ -24,8 +24,8 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.flywaydb.core.Flyway;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.statement.StatementContext;
@@ -42,7 +42,7 @@ public class CachedSqlDatabase implements Database {
         }
     };
 
-    private final Cache<String, Optional<Paste>> pasteCache = CacheBuilder.newBuilder()
+    private final Cache<String, Optional<Paste>> pasteCache = Caffeine.newBuilder()
             .softValues().expireAfterWrite(1, TimeUnit.MINUTES)
             .build();
 

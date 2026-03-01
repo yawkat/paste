@@ -10,7 +10,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * @author yawkat
