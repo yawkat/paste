@@ -1,7 +1,7 @@
 package at.yawk.paste.client;
 
 import at.yawk.paste.model.PasteData;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -21,14 +21,14 @@ public class PasteClient {
 
     private final Config config;
     private final ObjectMapper jsonObjectMapper;
-    private final ObjectMapper msgpackObjectMapper;
+    private final com.fasterxml.jackson.databind.ObjectMapper msgpackObjectMapper;
 
     private KeyPair keyPair;
 
     public PasteClient(Config config, ObjectMapper jsonObjectMapper) {
         this.config = config;
         this.jsonObjectMapper = jsonObjectMapper;
-        this.msgpackObjectMapper = new ObjectMapper(new MessagePackFactory());
+        this.msgpackObjectMapper = new com.fasterxml.jackson.databind.ObjectMapper(new MessagePackFactory());
         this.msgpackObjectMapper.findAndRegisterModules();
     }
 

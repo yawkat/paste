@@ -1,7 +1,8 @@
 package at.yawk.paste.server;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import java.io.IOException;
@@ -17,9 +18,7 @@ import java.nio.file.Paths;
 class ConfigProvider extends AbstractModule {
     @Provides
     ObjectMapper objectMapper() {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.findAndRegisterModules();
-        return objectMapper;
+        return JsonMapper.builder().build();
     }
 
     @Provides
@@ -30,10 +29,9 @@ class ConfigProvider extends AbstractModule {
             return new Config(); // default config
         } else {
             // load from file
-            ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-            objectMapper.findAndRegisterModules();
+            YAMLMapper yamlMapper = YAMLMapper.builder().build();
             try (InputStream in = Files.newInputStream(configPath)) {
-                return objectMapper.readValue(in, Config.class);
+                return yamlMapper.readValue(in, Config.class);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }

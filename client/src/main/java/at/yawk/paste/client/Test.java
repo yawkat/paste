@@ -1,7 +1,7 @@
 package at.yawk.paste.client;
 
 import at.yawk.paste.model.PasteData;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import java.io.IOException;
 
 /**
@@ -11,7 +11,7 @@ public class Test {
     public static void main(String[] args) throws IOException {
         Config config = new Config();
         ClipboardHelper clipboardHelper = new ClipboardHelper(config);
-        PasteClient pasteClient = new PasteClient(config, new ObjectMapper());
+        PasteClient pasteClient = new PasteClient(config, JsonMapper.builder().build());
 
         PasteData data = clipboardHelper.getCurrentClipboardData();
         if (data == null) {

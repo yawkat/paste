@@ -4,7 +4,7 @@ import at.yawk.paste.model.Paste;
 import at.yawk.paste.model.PasteData;
 import com.google.inject.ImplementedBy;
 import java.util.Optional;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * @author yawkat

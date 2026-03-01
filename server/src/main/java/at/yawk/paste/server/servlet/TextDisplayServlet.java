@@ -6,7 +6,7 @@ import at.yawk.paste.model.TextPasteData;
 import at.yawk.paste.server.PasteServlet;
 import at.yawk.paste.server.Request;
 import java.util.List;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import lombok.Value;
 
 /**

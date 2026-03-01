@@ -10,7 +10,7 @@ import java.io.Writer;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.Optional;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
