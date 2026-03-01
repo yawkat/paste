@@ -11,7 +11,7 @@ import java.nio.file.Files;
 import java.security.*;
 import java.util.Base64;
 import lombok.SneakyThrows;
-import org.msgpack.jackson.dataformat.MessagePackFactory;
+import tools.jackson.dataformat.cbor.CBORMapper;
 
 /**
  * @author yawkat
@@ -21,15 +21,14 @@ public class PasteClient {
 
     private final Config config;
     private final ObjectMapper jsonObjectMapper;
-    private final com.fasterxml.jackson.databind.ObjectMapper msgpackObjectMapper;
+    private final ObjectMapper cborObjectMapper;
 
     private KeyPair keyPair;
 
     public PasteClient(Config config, ObjectMapper jsonObjectMapper) {
         this.config = config;
         this.jsonObjectMapper = jsonObjectMapper;
-        this.msgpackObjectMapper = new com.fasterxml.jackson.databind.ObjectMapper(new MessagePackFactory());
-        this.msgpackObjectMapper.findAndRegisterModules();
+        this.cborObjectMapper = CBORMapper.builder().build();
     }
 
     @SneakyThrows(NoSuchAlgorithmException.class)
@@ -65,7 +64,7 @@ public class PasteClient {
      * @return The full URL where this paste was saved.
      */
     public String save(PasteData data, UploadProgressListener progressListener) throws IOException {
-        byte[] bytes = msgpackObjectMapper.writeValueAsBytes(data);
+        byte[] bytes = cborObjectMapper.writeValueAsBytes(data);
         progressListener.update(0, bytes.length);
 
         URL url = config.getRemote();
@@ -91,6 +90,7 @@ public class PasteClient {
         }
 
         connection.setRequestProperty("Authorization", authHeaderBuilder.toString());
+        connection.setRequestProperty("Content-Type", "application/cbor");
 
         connection.setDoInput(true);
         connection.setDoOutput(true);

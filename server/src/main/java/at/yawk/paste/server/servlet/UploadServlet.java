@@ -17,6 +17,7 @@ import java.util.Base64;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.msgpack.jackson.dataformat.MessagePackFactory;
+import tools.jackson.dataformat.cbor.CBORMapper;
 
 /**
  * @author yawkat
@@ -28,10 +29,12 @@ public class UploadServlet implements Servlet {
     Config config;
 
     private final ObjectMapper msgPackMapper;
+    private final tools.jackson.databind.ObjectMapper cborMapper;
 
     {
         msgPackMapper = new ObjectMapper(new MessagePackFactory());
         msgPackMapper.findAndRegisterModules();
+        cborMapper = CBORMapper.builder().build();
     }
 
     @Inject
@@ -106,7 +109,13 @@ public class UploadServlet implements Servlet {
             throw new IOException(e);
         }
 
-        PasteData pasteData = msgPackMapper.readValue(bytes, PasteData.class);
+        PasteData pasteData;
+        HeaderValues contentType = request.getExchange().getRequestHeaders().get("Content-Type");
+        if (contentType != null && contentType.stream().anyMatch(v -> v.contains("application/cbor"))) {
+            pasteData = cborMapper.readValue(bytes, PasteData.class);
+        } else {
+            pasteData = msgPackMapper.readValue(bytes, PasteData.class);
+        }
         Paste inserted = request.getDatabase().insertPaste(pasteData);
 
         request.getExchange().getResponseHeaders().add(new HttpString("Location"), inserted.getId());

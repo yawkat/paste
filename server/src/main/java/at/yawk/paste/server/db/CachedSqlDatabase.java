@@ -4,7 +4,6 @@ import at.yawk.paste.model.Paste;
 import at.yawk.paste.model.PasteData;
 import at.yawk.paste.server.Config;
 import at.yawk.paste.server.PasteIdSpecification;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -32,9 +31,13 @@ import org.jdbi.v3.core.statement.StatementContext;
 import org.jdbi.v3.core.statement.StatementCustomizer;
 import org.msgpack.jackson.dataformat.MessagePackFactory;
 import org.postgresql.PGStatement;
+import tools.jackson.dataformat.cbor.CBORMapper;
 
 @Singleton
 public class CachedSqlDatabase implements Database {
+    private static final int DATA_VERSION_MSGPACK = 1;
+    private static final int DATA_VERSION_CBOR = 2;
+
     private static final StatementCustomizer PREPARE_IMMEDIATELY = new StatementCustomizer() {
         @Override
         public void beforeExecution(PreparedStatement stmt, StatementContext ctx) throws SQLException {
@@ -48,8 +51,9 @@ public class CachedSqlDatabase implements Database {
 
     @Inject PasteIdSpecification pasteIdSpecification;
 
-    private final ObjectMapper objectMapper = new ObjectMapper(new MessagePackFactory())
+    private final ObjectMapper msgpackMapper = new ObjectMapper(new MessagePackFactory())
             .findAndRegisterModules();
+    private final tools.jackson.databind.ObjectMapper cborMapper = CBORMapper.builder().build();
 
     private Jdbi dbi;
 
@@ -80,7 +84,7 @@ public class CachedSqlDatabase implements Database {
     private Optional<Paste> getPaste0(String id, boolean block, boolean cache) {
         Optional<Paste> cached = pasteCache.getIfPresent(id);
         if (cached == null && block) {
-            cached = dbi.withHandle(handle -> handle.createQuery("select id, time, data from paste where id = ?")
+            cached = dbi.withHandle(handle -> handle.createQuery("select id, time, data, data_version from paste where id = ?")
                     .bind(0, id)
                     .addCustomizer(PREPARE_IMMEDIATELY)
                     .map(this::map)
@@ -110,18 +114,14 @@ public class CachedSqlDatabase implements Database {
      * @return {@code false} iff the id is already in use
      */
     boolean insertPaste(Paste paste) {
-        byte[] bytes;
-        try {
-            bytes = objectMapper.writerFor(PasteData.class).writeValueAsBytes(paste.getData());
-        } catch (JsonProcessingException e) {
-            throw new UncheckedIOException(e);
-        }
+        byte[] bytes = cborMapper.writerFor(PasteData.class).writeValueAsBytes(paste.getData());
         return dbi.withHandle(handle -> {
-            int n = handle.createUpdate("insert into paste (id, time, data) values (?, ?, ?) on conflict do nothing ")
+            int n = handle.createUpdate("insert into paste (id, time, data, data_version) values (?, ?, ?, ?) on conflict do nothing ")
                     .addCustomizer(PREPARE_IMMEDIATELY)
                     .bind(0, paste.getId())
                     .bind(1, paste.getTime())
                     .bind(2, bytes)
+                    .bind(3, DATA_VERSION_CBOR)
                     .execute();
             if (n == 0) {
                 handle.rollback();
@@ -139,10 +139,24 @@ public class CachedSqlDatabase implements Database {
         LocalDateTime ldt = rs.getObject("time", LocalDateTime.class);
         paste.setTime(ldt == null ? null : ldt.toInstant(ZoneOffset.UTC));
         try {
-            paste.setData(objectMapper.readValue(rs.getBytes("data"), PasteData.class));
+            byte[] data = rs.getBytes("data");
+            int dataVersion = rs.getInt("data_version");
+            paste.setData(deserializePasteData(data, dataVersion));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
         return paste;
+    }
+
+    /**
+     * Deserialize paste data based on the stored data version.
+     * Version 1 = msgpack, Version 2 = CBOR.
+     */
+    private PasteData deserializePasteData(byte[] data, int dataVersion) throws IOException {
+        return switch (dataVersion) {
+            case DATA_VERSION_MSGPACK -> msgpackMapper.readValue(data, PasteData.class);
+            case DATA_VERSION_CBOR -> cborMapper.readValue(data, PasteData.class);
+            default -> throw new IOException("Unknown data version: " + dataVersion);
+        };
     }
 }
