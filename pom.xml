@@ -12,6 +12,7 @@
         <module>shared</module>
         <module>server</module>
         <module>client</module>
+        <module>cli</module>
     </modules>
 
     <properties>

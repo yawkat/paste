@@ -1,0 +1,3 @@
+#!/bin/sh
+# Wrapper for the paste CLI. Install to ~/.local/bin/paste.
+exec java -Djava.awt.headless=true -jar "${PASTE_JAR:-$HOME/.local/share/paste/paste.jar}" "$@"

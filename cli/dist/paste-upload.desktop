@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Paste
+Comment=Upload to paste server
+Icon=document-share
+Exec=paste file %f
+MimeType=image/png;image/jpeg;
+Terminal=false
