@@ -84,8 +84,13 @@ public class ClipboardHelper {
             }
         } catch (IOException ignored) {}
 
-        byte[] bytes = Files.readAllBytes(file.toPath());
+        return getTextPasteData(Files.readAllBytes(file.toPath()));
+    }
 
+    /**
+     * Decode the given bytes as text, detecting the charset.
+     */
+    public TextPasteData getTextPasteData(byte[] bytes) {
         nsDetector charsetDetector = new nsDetector();
 
         AtomicReference<String> charsetName = new AtomicReference<>();
@@ -146,11 +151,18 @@ public class ClipboardHelper {
             BufferedImage image = ImageIO.read(file);
             return image == null ? null : getImagePasteData(image);
         } else {
-            ImagePasteData data = new ImagePasteData();
-            data.setFormat(supportedFormat);
-            data.setData(Files.readAllBytes(file.toPath()));
-            return data;
+            return getImagePasteData(Files.readAllBytes(file.toPath()), supportedFormat);
         }
+    }
+
+    /**
+     * Create image paste data from bytes that are already encoded in the given format.
+     */
+    public ImagePasteData getImagePasteData(byte[] bytes, ImageFormat format) {
+        ImagePasteData data = new ImagePasteData();
+        data.setFormat(format);
+        data.setData(bytes);
+        return data;
     }
 
     public ImagePasteData getImagePasteData(Image image) throws IOException {
