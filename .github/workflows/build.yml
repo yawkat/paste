@@ -5,6 +5,11 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  # started by renovate-deps.yml after it pushes the regenerated nix/deps.sha256
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -29,6 +34,27 @@ jobs:
         with:
           name: server-shaded
           path: server/target/server-1.0-SNAPSHOT-shaded.jar
+
+  # the packages and the NixOS VM test, built offline from the dependencies pinned by nix/deps.sha256
+  nix:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # hardware acceleration for the NixOS test VM
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      # Fails with a hash mismatch if nix/deps.sha256 is out of date with the pom.xml files.
+      - name: Check flake
+        run: nix flake check -L
 
   release:
     needs: build
