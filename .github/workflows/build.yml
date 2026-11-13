@@ -28,13 +28,6 @@ jobs:
       - name: Build with Maven
         run: mvn -B package --file pom.xml
 
-      - name: Upload server jar
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        if: github.ref == 'refs/heads/master'
-        with:
-          name: server-shaded
-          path: server/target/server-1.0-SNAPSHOT-shaded.jar
-
   # the packages and the NixOS VM test, built offline from the dependencies pinned by nix/deps.sha256
   nix:
     runs-on: ubuntu-latest
@@ -56,26 +49,3 @@ jobs:
       - name: Check flake
         run: nix flake check -L
 
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-    permissions:
-      contents: write
-
-    steps:
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          name: server-shaded
-
-      - name: Create or update rolling release
-        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1
-        with:
-          tag: latest
-          name: Latest Build
-          body: "Rolling release from the latest master build."
-          artifacts: server-1.0-SNAPSHOT-shaded.jar
-          artifactName: server-shaded.jar
-          allowUpdates: true
-          removeArtifacts: true
-          makeLatest: true
