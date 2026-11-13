@@ -1,16 +1,15 @@
 package at.yawk.paste.server;
 
-import at.yawk.paste.model.Paste;
 import at.yawk.paste.server.db.Database;
 import io.undertow.server.HttpServerExchange;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.Optional;
-import org.jspecify.annotations.Nullable;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,21 +24,6 @@ public class Request {
     private final TemplateEngine templateEngine;
     private final Iterator<Servlet> servletIterator;
 
-    private CacheEntry pasteCache = null;
-
-    @Nullable
-    public Optional<Paste> getPaste(String id, boolean block) {
-        if (pasteCache != null && pasteCache.id.equals(id)) {
-            return pasteCache.getPaste();
-        } else {
-            Optional<Paste> paste = database.getPaste(id, block);
-            if (paste != null) {
-                pasteCache = new CacheEntry(id, paste);
-            }
-            return paste;
-        }
-    }
-
     public void proceed() throws Exception {
         if (servletIterator.hasNext()) {
             servletIterator.next().handle(this);
@@ -50,7 +34,7 @@ public class Request {
 
     @SneakyThrows
     public void render(String viewName, Object model) {
-        Writer writer = new OutputStreamWriter(getOutputStream());
+        Writer writer = new OutputStreamWriter(getOutputStream(), StandardCharsets.UTF_8);
         templateEngine.render(viewName, writer, model);
         finish();
     }
@@ -85,15 +69,9 @@ public class Request {
             if (requestStartTime == -1) {
                 log.info("{}", this);
             } else {
-                log.info("{} : {} ns", this, String.format("%9d", System.nanoTime() - requestStartTime));
+                log.info("{} : {} ns", this, "%9d".formatted(System.nanoTime() - requestStartTime));
             }
         }
-    }
-
-    @Value
-    private static class CacheEntry {
-        String id;
-        Optional<Paste> paste;
     }
 
     @Override

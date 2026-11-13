@@ -18,19 +18,20 @@ import java.io.InterruptedIOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Files;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.mozilla.intl.chardet.nsDetector;
+import org.mozilla.universalchardet.UniversalDetector;
 
 /**
  * @author yawkat
@@ -53,12 +54,12 @@ public class ClipboardHelper {
     @SneakyThrows(UnsupportedFlavorException.class) // checked with getTransferDataFlavors
     public PasteData getPasteData(Transferable transferable) throws IOException {
         for (DataFlavor flavor : transferable.getTransferDataFlavors()) {
-            if (flavor.equals(DataFlavor.imageFlavor)) {
-                Image image = (Image) transferable.getTransferData(DataFlavor.imageFlavor);
+            if (flavor.equals(DataFlavor.imageFlavor)
+                    && transferable.getTransferData(DataFlavor.imageFlavor) instanceof Image image) {
                 return getImagePasteData(image);
             }
-            if (flavor.equals(DataFlavor.stringFlavor)) {
-                String text = (String) transferable.getTransferData(DataFlavor.stringFlavor);
+            if (flavor.equals(DataFlavor.stringFlavor)
+                    && transferable.getTransferData(DataFlavor.stringFlavor) instanceof String text) {
                 URLPasteData urlPasteData = getUrlPasteData(text);
                 if (urlPasteData != null) { return urlPasteData; }
                 return getTextPasteData(text);
@@ -67,13 +68,14 @@ public class ClipboardHelper {
                 //noinspection unchecked
                 List<File> files = (List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
                 if (files.size() == 1) {
-                    return getFilePasteData(files.get(0));
+                    return getFilePasteData(files.getFirst());
                 }
             }
         }
         return null;
     }
 
+    @Nullable
     public PasteData getFilePasteData(File file) throws IOException {
         if (!file.exists() || file.isDirectory()) { return null; }
 
@@ -88,42 +90,36 @@ public class ClipboardHelper {
     }
 
     /**
-     * Decode the given bytes as text, detecting the charset.
+     * Decode the given bytes as text, detecting the charset. Falls back to UTF-8, which also covers plain ASCII.
      */
     public TextPasteData getTextPasteData(byte[] bytes) {
-        nsDetector charsetDetector = new nsDetector();
+        UniversalDetector charsetDetector = new UniversalDetector();
+        charsetDetector.handleData(bytes, 0, bytes.length);
+        charsetDetector.dataEnd();
+        String charsetName = charsetDetector.getDetectedCharset();
 
-        AtomicReference<String> charsetName = new AtomicReference<>();
-        charsetDetector.Init(name -> charsetName.compareAndSet(null, name));
-
-        if (!charsetDetector.isAscii(bytes, bytes.length)) {
-            charsetDetector.DoIt(bytes, bytes.length, false);
-        }
-
-        Charset charset = StandardCharsets.US_ASCII;
-        if (charsetName.get() != null) {
+        Charset charset = StandardCharsets.UTF_8;
+        if (charsetName != null) {
             try {
-                charset = Charset.forName(charsetName.get());
-            } catch (UnsupportedCharsetException ignored) {}
+                charset = Charset.forName(charsetName);
+            } catch (IllegalCharsetNameException | UnsupportedCharsetException ignored) {}
         }
 
         return getTextPasteData(new String(bytes, charset));
     }
 
     public TextPasteData getTextPasteData(String text) {
-        TextPasteData data = new TextPasteData();
-        data.setText(text);
-        return data;
+        return new TextPasteData(text);
     }
 
     @Nullable
     public URLPasteData getUrlPasteData(String url) {
         try {
-            URL o = new URL(url);
-
-            URLPasteData data = new URLPasteData();
-            data.setUrl(o);
-            return data;
+            // Not URI: it rejects characters like [ ] | that browsers accept in links. The server reads stored URLs
+            // with new URL too.
+            @SuppressWarnings("deprecation")
+            URL parsed = new URL(url);
+            return new URLPasteData(parsed);
         } catch (MalformedURLException e) {
             return null;
         }
@@ -136,14 +132,11 @@ public class ClipboardHelper {
             Iterator<ImageReader> imageReaders = ImageIO.getImageReaders(input);
             while (imageReaders.hasNext() && supportedFormat == null) {
                 String formatName = imageReaders.next().getFormatName();
-                switch (formatName.toLowerCase()) {
-                case "png":
-                    supportedFormat = ImageFormat.PNG;
-                    break;
-                case "jpeg":
-                    supportedFormat = ImageFormat.JPEG;
-                    break;
-                }
+                supportedFormat = switch (formatName.toLowerCase(Locale.ROOT)) {
+                    case "png" -> ImageFormat.PNG;
+                    case "jpeg" -> ImageFormat.JPEG;
+                    default -> null;
+                };
             }
         }
 
@@ -159,20 +152,17 @@ public class ClipboardHelper {
      * Create image paste data from bytes that are already encoded in the given format.
      */
     public ImagePasteData getImagePasteData(byte[] bytes, ImageFormat format) {
-        ImagePasteData data = new ImagePasteData();
-        data.setFormat(format);
-        data.setData(bytes);
-        return data;
+        return new ImagePasteData(bytes, format);
     }
 
     public ImagePasteData getImagePasteData(Image image) throws IOException {
         RenderedImage renderedImage;
-        if (image instanceof RenderedImage) {
-            renderedImage = (RenderedImage) image;
-        } else if (image instanceof RenderableImage) {
-            renderedImage = ((RenderableImage) image).createDefaultRendering();
-        } else if (image instanceof VolatileImage) {
-            renderedImage = ((VolatileImage) image).getSnapshot();
+        if (image instanceof RenderedImage rendered) {
+            renderedImage = rendered;
+        } else if (image instanceof RenderableImage renderable) {
+            renderedImage = renderable.createDefaultRendering();
+        } else if (image instanceof VolatileImage volatileImage) {
+            renderedImage = volatileImage.getSnapshot();
         } else {
             int width = image.getWidth(null);
             int height = image.getHeight(null);
@@ -212,19 +202,17 @@ public class ClipboardHelper {
                 width = image.getWidth(null);
                 height = image.getHeight(null);
             }
-            renderedImage = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
-            Graphics2D graphics = ((BufferedImage) renderedImage).createGraphics();
-            graphics.drawImage(image, null, null);
+            BufferedImage buffered = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
+            Graphics2D graphics = buffered.createGraphics();
+            graphics.drawImage(image, 0, 0, null);
             graphics.dispose();
+            renderedImage = buffered;
         }
 
         ImageFormat format = config.getPreferredImageFormat();
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         format.encode(renderedImage, buf);
 
-        ImagePasteData data = new ImagePasteData();
-        data.setFormat(format);
-        data.setData(buf.toByteArray());
-        return data;
+        return new ImagePasteData(buf.toByteArray(), format);
     }
 }

@@ -6,18 +6,17 @@ import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
 import java.io.IOException;
 import java.io.Writer;
-import jakarta.inject.Singleton;
 import lombok.SneakyThrows;
 
 /**
  * @author yawkat
  */
-@Singleton
 public class TemplateEngine {
-    private Configuration cfg;
+    private final Configuration cfg;
 
-    {
-        cfg = new Configuration(Configuration.VERSION_2_3_22);
+    public TemplateEngine() {
+        // 2.3.33+ exposes record components like bean properties
+        cfg = new Configuration(Configuration.VERSION_2_3_34);
         cfg.setClassLoaderForTemplateLoading(TemplateEngine.class.getClassLoader(), "/templates/");
         cfg.setDefaultEncoding("UTF-8");
         cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);

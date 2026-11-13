@@ -12,9 +12,13 @@ import java.util.List;
  */
 @PasteServlet.Suffix("")
 public class URLForwardServlet extends PasteServlet<URLPasteData> {
+    public URLForwardServlet(Context context) {
+        super(context);
+    }
+
     @Override
     protected void handle(Request request, Paste paste, URLPasteData data, List<String> groups) throws Exception {
-        request.getExchange().setResponseCode(301);
-        request.getExchange().getResponseHeaders().add(new HttpString("Location"), data.getUrl().toString());
+        request.getExchange().setStatusCode(301);
+        request.getExchange().getResponseHeaders().add(new HttpString("Location"), data.url().toString());
     }
 }

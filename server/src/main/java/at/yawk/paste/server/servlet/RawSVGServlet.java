@@ -13,12 +13,16 @@ import java.util.List;
  */
 @PasteServlet.Suffix("\\.svg")
 public class RawSVGServlet extends PasteServlet<SVGPasteData> {
+    public RawSVGServlet(Context context) {
+        super(context);
+    }
+
     @Override
     protected void handle(Request request, Paste paste, SVGPasteData data, List<String> groups) throws Exception {
-        request.getExchange().setResponseCode(200);
+        request.getExchange().setStatusCode(200);
         request.getExchange().getResponseHeaders().add(new HttpString("Content-Type"), "image/svg+xml");
 
-        byte[] bytes = data.getSvg().getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = data.svg().getBytes(StandardCharsets.UTF_8);
         request.setContentLength(bytes.length);
         request.getOutputStream().write(bytes);
 

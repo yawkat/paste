@@ -6,7 +6,7 @@ import at.yawk.paste.model.SVGPasteData;
  * @author yawkat
  */
 public class SVGDisplayServlet extends DisplayServlet<SVGPasteData> {
-    public SVGDisplayServlet() {
-        super("svg");
+    public SVGDisplayServlet(Context context) {
+        super("svg", context);
     }
 }

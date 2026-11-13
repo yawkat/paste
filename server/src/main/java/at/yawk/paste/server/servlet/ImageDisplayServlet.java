@@ -6,7 +6,7 @@ import at.yawk.paste.model.ImagePasteData;
  * @author yawkat
  */
 public class ImageDisplayServlet extends DisplayServlet<ImagePasteData> {
-    public ImageDisplayServlet() {
-        super("image");
+    public ImageDisplayServlet(Context context) {
+        super("image", context);
     }
 }

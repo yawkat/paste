@@ -13,12 +13,16 @@ import java.util.List;
  */
 @PasteServlet.Suffix("\\.txt")
 public class RawTextServlet extends PasteServlet<TextPasteData> {
+    public RawTextServlet(Context context) {
+        super(context);
+    }
+
     @Override
     protected void handle(Request request, Paste paste, TextPasteData data, List<String> groups) throws Exception {
-        request.getExchange().setResponseCode(200);
+        request.getExchange().setStatusCode(200);
         request.getExchange().getResponseHeaders().add(new HttpString("Content-Type"), "text/plain; charset=utf-8");
 
-        byte[] bytes = data.getText().getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = data.text().getBytes(StandardCharsets.UTF_8);
         request.setContentLength(bytes.length);
         request.getOutputStream().write(bytes);
 

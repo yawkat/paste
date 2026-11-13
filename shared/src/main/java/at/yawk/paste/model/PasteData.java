@@ -18,4 +18,5 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         include = JsonTypeInfo.As.PROPERTY,
         property = "type"
 )
-public interface PasteData {}
+public sealed interface PasteData
+        permits ImagePasteData, TextPasteData, SVGPasteData, VideoPasteData, URLPasteData {}

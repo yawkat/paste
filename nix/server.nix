@@ -3,7 +3,7 @@
   lib,
   runCommand,
   makeWrapper,
-  jre,
+  jdk25_headless,
   jars,
 }:
 
@@ -18,6 +18,6 @@ runCommand "paste-server-${jars.version}"
     };
   }
   ''
-    makeWrapper ${lib.getExe jre} "$out/bin/paste-server" \
-      --add-flags "-jar ${jars}/share/paste/server.jar"
+    makeWrapper ${jdk25_headless}/bin/java "$out/bin/paste-server" \
+      --add-flags "-jar ${jars}/share/paste/server/server-${jars.version}.jar"
   ''

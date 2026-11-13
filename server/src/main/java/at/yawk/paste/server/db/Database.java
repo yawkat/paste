@@ -2,26 +2,24 @@ package at.yawk.paste.server.db;
 
 import at.yawk.paste.model.Paste;
 import at.yawk.paste.model.PasteData;
-import com.google.inject.ImplementedBy;
 import java.util.Optional;
-import org.jspecify.annotations.Nullable;
 
 /**
+ * Requests are handled on worker threads, so all methods may block.
+ *
  * @author yawkat
  */
-@ImplementedBy(CachedSqlDatabase.class)
 public interface Database {
     /**
-     * Get the paste with the given ID. May block only if the block parameter is true.
+     * Get the paste with the given ID.
      *
-     * @return The saved paste with this id or an empty optional if this paste does not exist or null if block is false
-     * and we don't know if this paste exists. The returned paste must never be modified.
+     * @return The saved paste with this id or an empty optional if this paste does not exist. The returned paste must
+     * never be modified.
      */
-    @Nullable
-    Optional<Paste> getPaste(String id, boolean block);
+    Optional<Paste> getPaste(String id);
 
     /**
-     * Create a paste with the given data. May block.
+     * Create a paste with the given data.
      */
     Paste insertPaste(PasteData data);
 }

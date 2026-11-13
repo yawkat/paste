@@ -10,6 +10,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -17,6 +18,10 @@ import java.util.stream.Collectors;
  * @author yawkat
  */
 public class RawImageServlet extends PasteServlet<ImagePasteData> {
+    public RawImageServlet(Context context) {
+        super(context);
+    }
+
     @Override
     protected String getSuffixPattern() {
         // for example \.(png|jpeg|jpg)
@@ -34,7 +39,7 @@ public class RawImageServlet extends PasteServlet<ImagePasteData> {
 
     @Override
     protected void handle(Request request, Paste paste, ImagePasteData data, List<String> groups) throws Exception {
-        ImageFormat expectedFormat = ImageFormat.byExtension(groups.get(0).toLowerCase());
+        ImageFormat expectedFormat = ImageFormat.byExtension(groups.getFirst().toLowerCase(Locale.ROOT));
 
         if (expectedFormat == null) {
             // should probably not happen but handle it anyway
@@ -42,7 +47,7 @@ public class RawImageServlet extends PasteServlet<ImagePasteData> {
             return;
         }
 
-        request.getExchange().setResponseCode(200);
+        request.getExchange().setStatusCode(200);
         request.getExchange().getResponseHeaders().add(new HttpString("Content-Type"), expectedFormat.getMediaType());
 
         dumpImage(request, data, expectedFormat);
@@ -51,12 +56,12 @@ public class RawImageServlet extends PasteServlet<ImagePasteData> {
     }
 
     protected void dumpImage(Request request, ImagePasteData data, ImageFormat expectedFormat) throws IOException {
-        byte[] bytes = data.getData();
-        if (data.getFormat() == expectedFormat) {
+        byte[] bytes = data.data();
+        if (data.format() == expectedFormat) {
             request.setContentLength(bytes.length);
             request.getOutputStream().write(bytes);
         } else {
-            data.getFormat().transformTo(new ByteArrayInputStream(bytes), expectedFormat, request.getOutputStream());
+            data.format().transformTo(new ByteArrayInputStream(bytes), expectedFormat, request.getOutputStream());
         }
     }
 }

@@ -13,7 +13,8 @@ import java.util.List;
 public abstract class DisplayServlet<D extends PasteData> extends PasteServlet<D> {
     private final String viewName;
 
-    public DisplayServlet(String viewName) {
+    protected DisplayServlet(String viewName, Context context) {
+        super(context);
         this.viewName = viewName;
     }
 

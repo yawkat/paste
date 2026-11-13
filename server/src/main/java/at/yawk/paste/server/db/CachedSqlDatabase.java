@@ -4,7 +4,6 @@ import at.yawk.paste.model.Paste;
 import at.yawk.paste.model.PasteData;
 import at.yawk.paste.server.Config;
 import at.yawk.paste.server.PasteIdSpecification;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.zaxxer.hikari.HikariConfig;
@@ -17,23 +16,20 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
-import org.jspecify.annotations.Nullable;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import java.util.random.RandomGenerator;
 import org.flywaydb.core.Flyway;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.jdbi.v3.core.statement.StatementCustomizer;
-import org.msgpack.jackson.dataformat.MessagePackFactory;
+import org.komamitsu.jackson.dataformat.msgpack.MessagePackMapper;
 import org.postgresql.PGStatement;
+import tools.jackson.databind.ObjectMapper;
 import tools.jackson.dataformat.cbor.CBORMapper;
 
-@Singleton
 public class CachedSqlDatabase implements Database {
     private static final int DATA_VERSION_MSGPACK = 1;
     private static final int DATA_VERSION_CBOR = 2;
@@ -46,19 +42,18 @@ public class CachedSqlDatabase implements Database {
     };
 
     private final Cache<String, Optional<Paste>> pasteCache = Caffeine.newBuilder()
-            .softValues().expireAfterWrite(1, TimeUnit.MINUTES)
+            .softValues().expireAfterWrite(Duration.ofMinutes(1))
             .build();
 
-    @Inject PasteIdSpecification pasteIdSpecification;
+    private final ObjectMapper msgpackMapper = MessagePackMapper.builder().build();
+    private final ObjectMapper cborMapper = CBORMapper.builder().build();
 
-    private final ObjectMapper msgpackMapper = new ObjectMapper(new MessagePackFactory())
-            .findAndRegisterModules();
-    private final tools.jackson.databind.ObjectMapper cborMapper = CBORMapper.builder().build();
+    private final PasteIdSpecification pasteIdSpecification;
+    private final Jdbi dbi;
 
-    private Jdbi dbi;
+    public CachedSqlDatabase(Config config, PasteIdSpecification pasteIdSpecification) {
+        this.pasteIdSpecification = pasteIdSpecification;
 
-    @Inject
-    void connect(Config config) {
         Properties properties = new Properties();
         properties.putAll(config.getSqlConfig());
         HikariDataSource dataSource = new HikariDataSource(new HikariConfig(properties));
@@ -71,41 +66,33 @@ public class CachedSqlDatabase implements Database {
         dbi = Jdbi.create(dataSource);
     }
 
-    @Nullable
     @Override
-    public Optional<Paste> getPaste(String id, boolean block) {
-        return getPaste0(id, block, true);
-    }
-
-    /**
-     * @param cache Whether we may save data to the cache.
-     */
-    @SuppressWarnings("OptionalAssignedToNull")
-    private Optional<Paste> getPaste0(String id, boolean block, boolean cache) {
+    public Optional<Paste> getPaste(String id) {
+        // not Cache.get(id, loader): that would hold a lock shared with other ids during the query
         Optional<Paste> cached = pasteCache.getIfPresent(id);
-        if (cached == null && block) {
-            cached = dbi.withHandle(handle -> handle.createQuery("select id, time, data, data_version from paste where id = ?")
-                    .bind(0, id)
-                    .addCustomizer(PREPARE_IMMEDIATELY)
-                    .map(this::map)
-                    .findOne());
-            if (cache) {
-                pasteCache.put(id, cached);
-            }
+        if (cached == null) {
+            cached = loadPaste(id);
+            pasteCache.put(id, cached);
         }
         return cached;
     }
 
+    private Optional<Paste> loadPaste(String id) {
+        return dbi.withHandle(handle -> handle.createQuery("select id, time, data, data_version from paste where id = ?")
+                .bind(0, id)
+                .addCustomizer(PREPARE_IMMEDIATELY)
+                .map(this::map)
+                .findOne());
+    }
+
     @Override
     public Paste insertPaste(PasteData data) {
-        Paste paste = new Paste();
-        paste.setTime(Instant.now());
-        paste.setData(data);
-
-        Random rng = ThreadLocalRandom.current();
+        Instant time = Instant.now();
+        RandomGenerator rng = ThreadLocalRandom.current();
+        Paste paste;
         do {
             // generate an ID
-            paste.setId(pasteIdSpecification.generate(rng));
+            paste = new Paste(pasteIdSpecification.generate(rng), time, data);
         } while (!insertPaste(paste));
         return paste;
     }
@@ -114,12 +101,12 @@ public class CachedSqlDatabase implements Database {
      * @return {@code false} iff the id is already in use
      */
     boolean insertPaste(Paste paste) {
-        byte[] bytes = cborMapper.writerFor(PasteData.class).writeValueAsBytes(paste.getData());
+        byte[] bytes = cborMapper.writerFor(PasteData.class).writeValueAsBytes(paste.data());
         return dbi.withHandle(handle -> {
             int n = handle.createUpdate("insert into paste (id, time, data, data_version) values (?, ?, ?, ?) on conflict do nothing ")
                     .addCustomizer(PREPARE_IMMEDIATELY)
-                    .bind(0, paste.getId())
-                    .bind(1, paste.getTime())
+                    .bind(0, paste.id())
+                    .bind(1, paste.time())
                     .bind(2, bytes)
                     .bind(3, DATA_VERSION_CBOR)
                     .execute();
@@ -134,18 +121,14 @@ public class CachedSqlDatabase implements Database {
     }
 
     private Paste map(ResultSet rs, StatementContext ctx) throws SQLException {
-        Paste paste = new Paste();
-        paste.setId(rs.getString("id"));
         LocalDateTime ldt = rs.getObject("time", LocalDateTime.class);
-        paste.setTime(ldt == null ? null : ldt.toInstant(ZoneOffset.UTC));
+        PasteData data;
         try {
-            byte[] data = rs.getBytes("data");
-            int dataVersion = rs.getInt("data_version");
-            paste.setData(deserializePasteData(data, dataVersion));
+            data = deserializePasteData(rs.getBytes("data"), rs.getInt("data_version"));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        return paste;
+        return new Paste(rs.getString("id"), ldt == null ? null : ldt.toInstant(ZoneOffset.UTC), data);
     }
 
     /**

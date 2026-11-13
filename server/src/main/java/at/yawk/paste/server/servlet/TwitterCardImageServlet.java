@@ -12,6 +12,10 @@ import java.io.IOException;
  * @author yawkat
  */
 public class TwitterCardImageServlet extends RawImageServlet {
+    public TwitterCardImageServlet(Context context) {
+        super(context);
+    }
+
     @Override
     protected String getSuffixPattern() {
         return "\\.twitter" + super.getSuffixPattern();
@@ -19,7 +23,7 @@ public class TwitterCardImageServlet extends RawImageServlet {
 
     @Override
     protected void dumpImage(Request request, ImagePasteData data, ImageFormat expectedFormat) throws IOException {
-        BufferedImage image = data.getFormat().decode(new ByteArrayInputStream(data.getData()));
+        BufferedImage image = data.format().decode(new ByteArrayInputStream(data.data()));
         if (image.getWidth() < 280 || image.getHeight() < 150) {
             BufferedImage resized = new BufferedImage(
                     Math.max(image.getWidth(), 280), Math.max(image.getWidth(), 150), BufferedImage.TYPE_3BYTE_BGR);
