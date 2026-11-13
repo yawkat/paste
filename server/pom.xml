@@ -41,6 +41,12 @@
             <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
+        <!-- MessagePack: pastes stored before the switch to CBOR, and uploads from older clients -->
+        <dependency>
+            <groupId>org.komamitsu</groupId>
+            <artifactId>jackson-dataformat-msgpack</artifactId>
+            <version>3.0.0</version>
+        </dependency>
         <dependency>
             <groupId>org.freemarker</groupId>
             <artifactId>freemarker</artifactId>

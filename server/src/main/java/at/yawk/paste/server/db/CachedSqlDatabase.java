@@ -3,7 +3,6 @@ package at.yawk.paste.server.db;
 import at.yawk.paste.model.Paste;
 import at.yawk.paste.model.PasteData;
 import at.yawk.paste.server.Config;
-import at.yawk.paste.server.MsgpackReader;
 import at.yawk.paste.server.PasteIdSpecification;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -26,6 +25,7 @@ import org.flywaydb.core.Flyway;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.jdbi.v3.core.statement.StatementCustomizer;
+import org.komamitsu.jackson.dataformat.msgpack.MessagePackMapper;
 import org.postgresql.PGStatement;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.dataformat.cbor.CBORMapper;
@@ -45,6 +45,7 @@ public class CachedSqlDatabase implements Database {
             .softValues().expireAfterWrite(Duration.ofMinutes(1))
             .build();
 
+    private final ObjectMapper msgpackMapper = MessagePackMapper.builder().build();
     private final ObjectMapper cborMapper = CBORMapper.builder().build();
 
     private final PasteIdSpecification pasteIdSpecification;
@@ -136,7 +137,7 @@ public class CachedSqlDatabase implements Database {
      */
     private PasteData deserializePasteData(byte[] data, int dataVersion) throws IOException {
         return switch (dataVersion) {
-            case DATA_VERSION_MSGPACK -> cborMapper.treeToValue(MsgpackReader.read(data), PasteData.class);
+            case DATA_VERSION_MSGPACK -> msgpackMapper.readValue(data, PasteData.class);
             case DATA_VERSION_CBOR -> cborMapper.readValue(data, PasteData.class);
             default -> throw new IOException("Unknown data version: " + dataVersion);
         };

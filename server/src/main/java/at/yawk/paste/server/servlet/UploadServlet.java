@@ -3,7 +3,6 @@ package at.yawk.paste.server.servlet;
 import at.yawk.paste.model.Paste;
 import at.yawk.paste.model.PasteData;
 import at.yawk.paste.server.Config;
-import at.yawk.paste.server.MsgpackReader;
 import at.yawk.paste.server.Request;
 import at.yawk.paste.server.Servlet;
 import io.undertow.util.HeaderValues;
@@ -13,6 +12,7 @@ import java.nio.file.Files;
 import java.security.*;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import org.komamitsu.jackson.dataformat.msgpack.MessagePackMapper;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.dataformat.cbor.CBORMapper;
 
@@ -24,6 +24,7 @@ public class UploadServlet implements Servlet {
     private volatile PublicKey publicKey;
 
     private final ObjectMapper cborMapper = CBORMapper.builder().build();
+    private final ObjectMapper msgpackMapper = MessagePackMapper.builder().build();
 
     public UploadServlet(Config config) {
         this.config = config;
@@ -92,7 +93,7 @@ public class UploadServlet implements Servlet {
             pasteData = cborMapper.readValue(bytes, PasteData.class);
         } else {
             // clients from before the switch to CBOR
-            pasteData = cborMapper.treeToValue(MsgpackReader.read(bytes), PasteData.class);
+            pasteData = msgpackMapper.readValue(bytes, PasteData.class);
         }
         Paste inserted = request.getDatabase().insertPaste(pasteData);
 
