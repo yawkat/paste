@@ -4,7 +4,7 @@
   runCommand,
   makeWrapper,
   writeText,
-  jdk21,
+  jdk25,
   wl-clipboard,
   libnotify,
   xdg-utils,
@@ -53,8 +53,8 @@ runCommand "paste-cli-${jars.version}"
   }
   ''
     # Installed as paste-cli, not paste, to avoid shadowing coreutils' paste.
-    makeWrapper ${jdk21}/bin/java "$out/bin/paste-cli" \
-      --add-flags "-Djava.awt.headless=true -jar ${jars}/share/paste/cli.jar" \
+    makeWrapper ${jdk25}/bin/java "$out/bin/paste-cli" \
+      --add-flags "-Djava.awt.headless=true -jar ${jars}/share/paste/cli/cli-${jars.version}.jar" \
       --prefix PATH : ${
         lib.makeBinPath [
           wl-clipboard

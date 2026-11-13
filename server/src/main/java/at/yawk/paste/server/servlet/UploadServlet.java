@@ -3,10 +3,9 @@ package at.yawk.paste.server.servlet;
 import at.yawk.paste.model.Paste;
 import at.yawk.paste.model.PasteData;
 import at.yawk.paste.server.Config;
+import at.yawk.paste.server.MsgpackReader;
 import at.yawk.paste.server.Request;
 import at.yawk.paste.server.Servlet;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.ByteStreams;
 import io.undertow.util.HeaderValues;
 import io.undertow.util.HttpString;
 import java.io.IOException;
@@ -14,31 +13,19 @@ import java.nio.file.Files;
 import java.security.*;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
-import org.msgpack.jackson.dataformat.MessagePackFactory;
+import tools.jackson.databind.ObjectMapper;
 import tools.jackson.dataformat.cbor.CBORMapper;
 
 /**
  * @author yawkat
  */
-@Singleton
 public class UploadServlet implements Servlet {
-    private PublicKey publicKey;
+    private final Config config;
+    private volatile PublicKey publicKey;
 
-    Config config;
+    private final ObjectMapper cborMapper = CBORMapper.builder().build();
 
-    private final ObjectMapper msgPackMapper;
-    private final tools.jackson.databind.ObjectMapper cborMapper;
-
-    {
-        msgPackMapper = new ObjectMapper(new MessagePackFactory());
-        msgPackMapper.findAndRegisterModules();
-        cborMapper = CBORMapper.builder().build();
-    }
-
-    @Inject
-    public void setConfig(Config config) {
+    public UploadServlet(Config config) {
         this.config = config;
         if (Files.exists(config.getKeyLocation())) {
             try {
@@ -64,7 +51,7 @@ public class UploadServlet implements Servlet {
             return;
         }
 
-        String[] parts = authorization.get(0).split(" ");
+        String[] parts = authorization.getFirst().split(" ");
         if (parts.length != 3 || !parts[0].equals("Signature")) {
             noAccess(request);
             return;
@@ -72,7 +59,6 @@ public class UploadServlet implements Servlet {
 
         PublicKey publicKey = decodePublicKey(Base64.getDecoder().decode(parts[1]));
         if (this.publicKey == null) {
-            // in theory we'd have to start blocking here but I'm lazy and it's only called once or twice
             synchronized (this) {
                 if (this.publicKey == null) {
                     Files.write(config.getKeyLocation(), publicKey.getEncoded());
@@ -86,16 +72,7 @@ public class UploadServlet implements Servlet {
         }
 
         byte[] signature = Base64.getDecoder().decode(parts[2]);
-
-        if (request.getExchange().isInIoThread()) {
-            request.getExchange().dispatch(exchange -> handleBlocking(request, signature));
-        } else {
-            handleBlocking(request, signature);
-        }
-    }
-
-    private void handleBlocking(Request request, byte[] signature) throws IOException {
-        byte[] bytes = ByteStreams.toByteArray(request.getInputStream());
+        byte[] bytes = request.getInputStream().readAllBytes();
 
         try {
             Signature verifier = Signature.getInstance("SHA512withRSA");
@@ -114,12 +91,13 @@ public class UploadServlet implements Servlet {
         if (contentType != null && contentType.stream().anyMatch(v -> v.contains("application/cbor"))) {
             pasteData = cborMapper.readValue(bytes, PasteData.class);
         } else {
-            pasteData = msgPackMapper.readValue(bytes, PasteData.class);
+            // clients from before the switch to CBOR
+            pasteData = cborMapper.treeToValue(MsgpackReader.read(bytes), PasteData.class);
         }
         Paste inserted = request.getDatabase().insertPaste(pasteData);
 
-        request.getExchange().getResponseHeaders().add(new HttpString("Location"), inserted.getId());
-        request.getExchange().setResponseCode(201);
+        request.getExchange().getResponseHeaders().add(new HttpString("Location"), inserted.id());
+        request.getExchange().setStatusCode(201);
         request.finish();
     }
 
@@ -128,7 +106,7 @@ public class UploadServlet implements Servlet {
     }
 
     private static void noAccess(Request request) {
-        request.getExchange().setResponseCode(403);
+        request.getExchange().setStatusCode(403);
         request.finish();
     }
 }

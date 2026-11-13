@@ -6,7 +6,7 @@ import at.yawk.paste.model.VideoPasteData;
  * @author yawkat
  */
 public class VideoDisplayServlet extends DisplayServlet<VideoPasteData> {
-    public VideoDisplayServlet() {
-        super("video");
+    public VideoDisplayServlet(Context context) {
+        super("video", context);
     }
 }

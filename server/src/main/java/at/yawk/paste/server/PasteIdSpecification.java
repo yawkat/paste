@@ -1,17 +1,15 @@
 package at.yawk.paste.server;
 
-import com.google.inject.ImplementedBy;
-import java.util.Random;
+import java.util.random.RandomGenerator;
 
 /**
  * @author yawkat
  */
-@ImplementedBy(DefaultPasteIdSpecification.class)
 public interface PasteIdSpecification {
     /**
      * Regular expression that matches all valid IDs.
      */
     String getPattern();
 
-    String generate(Random random);
+    String generate(RandomGenerator random);
 }

@@ -2,8 +2,6 @@ package at.yawk.paste.server;
 
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HeaderValues;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
 import tools.jackson.databind.ObjectMapper;
@@ -18,14 +16,12 @@ import java.net.http.HttpResponse;
  * Fire-and-forget: failures are logged and silently ignored.
  */
 @Slf4j
-@Singleton
 public class UmamiClient {
     private final @Nullable String apiUrl;
     private final @Nullable String websiteId;
     private final @Nullable HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
-    @Inject
     public UmamiClient(Config config, ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
         if (config.getUmamiUrl() != null && config.getUmamiWebsiteId() != null) {

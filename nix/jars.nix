@@ -1,4 +1,4 @@
-# Builds every module with Maven: the server's and the CLI's shaded jars.
+# Builds every module with Maven: the server's and the CLI's jars, each with its dependencies in lib/ next to it.
 #
 # The downloaded dependencies are pinned by the hash in ./deps.sha256. After changing a dependency or plugin in a
 # pom.xml, update it by running this from the repository root:
@@ -7,7 +7,7 @@
 {
   lib,
   maven,
-  jdk21,
+  jdk25,
 }:
 
 let
@@ -45,15 +45,18 @@ maven.buildMavenPackage {
   version = "1.0-SNAPSHOT";
   inherit src;
 
-  mvnJdk = jdk21;
+  mvnJdk = jdk25;
   mvnHash = lib.fileContents ./deps.sha256;
   mvnFetchExtraArgs.pname = "paste-maven-deps-${depsDigest}";
 
   installPhase = ''
     runHook preInstall
 
-    install -Dm644 server/target/server-1.0-SNAPSHOT-shaded.jar "$out/share/paste/server.jar"
-    install -Dm644 cli/target/cli-1.0-SNAPSHOT-shaded.jar "$out/share/paste/cli.jar"
+    # The jars' manifests refer to their dependencies as lib/<name>.jar, so keep the file names.
+    for app in server cli; do
+      install -Dm644 -t "$out/share/paste/$app" "$app/target/$app-1.0-SNAPSHOT.jar"
+      install -Dm644 -t "$out/share/paste/$app/lib" "$app"/target/lib/*.jar
+    done
 
     runHook postInstall
   '';

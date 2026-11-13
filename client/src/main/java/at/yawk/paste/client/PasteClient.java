@@ -2,11 +2,16 @@ package at.yawk.paste.client;
 
 import at.yawk.paste.model.PasteData;
 import tools.jackson.databind.ObjectMapper;
+import java.io.ByteArrayInputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.security.*;
 import java.util.Base64;
@@ -17,11 +22,11 @@ import tools.jackson.dataformat.cbor.CBORMapper;
  * @author yawkat
  */
 public class PasteClient {
-    private static final int CHUNK_SIZE = 4096;
-
     private final Config config;
     private final ObjectMapper jsonObjectMapper;
     private final ObjectMapper cborObjectMapper;
+    // redirects are not followed by default
+    private final HttpClient httpClient = HttpClient.newHttpClient();
 
     private KeyPair keyPair;
 
@@ -32,22 +37,20 @@ public class PasteClient {
     }
 
     @SneakyThrows(NoSuchAlgorithmException.class)
-    private KeyPair getKeyPair() throws IOException {
+    private synchronized KeyPair getKeyPair() throws IOException {
         if (keyPair == null) {
-            synchronized (this) {
-                if (Files.exists(config.getKeyFile())) {
-                    try (InputStream in = Files.newInputStream(config.getKeyFile())) {
-                        keyPair = jsonObjectMapper.readValue(in, RsaKeyPair.class).toKeyPair();
-                    } catch (GeneralSecurityException e) {
-                        throw new IOException(e);
-                    }
-                } else {
-                    KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-                    generator.initialize(4096);
-                    keyPair = generator.generateKeyPair();
-                    try (OutputStream out = Files.newOutputStream(config.getKeyFile())) {
-                        jsonObjectMapper.writeValue(out, RsaKeyPair.ofKeyPair(keyPair));
-                    }
+            if (Files.exists(config.getKeyFile())) {
+                try (InputStream in = Files.newInputStream(config.getKeyFile())) {
+                    keyPair = jsonObjectMapper.readValue(in, RsaKeyPair.class).toKeyPair();
+                } catch (GeneralSecurityException e) {
+                    throw new IOException(e);
+                }
+            } else {
+                KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+                generator.initialize(4096);
+                keyPair = generator.generateKeyPair();
+                try (OutputStream out = Files.newOutputStream(config.getKeyFile())) {
+                    jsonObjectMapper.writeValue(out, RsaKeyPair.ofKeyPair(keyPair));
                 }
             }
         }
@@ -67,56 +70,74 @@ public class PasteClient {
         byte[] bytes = cborObjectMapper.writeValueAsBytes(data);
         progressListener.update(0, bytes.length);
 
-        URL url = config.getRemote();
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-
         KeyPair keyPair = getKeyPair();
 
-        // build authorization header
-
         // Authorization: Signature <public key base64> <signature base64>
-        StringBuilder authHeaderBuilder = new StringBuilder("Signature ");
-        // public key
-        authHeaderBuilder.append(Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
-        authHeaderBuilder.append(' ');
-        // signature
+        String authorization;
         try {
             Signature signature = Signature.getInstance("SHA512withRSA");
             signature.initSign(keyPair.getPrivate());
             signature.update(bytes);
-            authHeaderBuilder.append(Base64.getEncoder().encodeToString(signature.sign()));
+            authorization = "Signature "
+                    + Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()) + " "
+                    + Base64.getEncoder().encodeToString(signature.sign());
         } catch (GeneralSecurityException e) {
             throw new IOException(e);
         }
 
-        connection.setRequestProperty("Authorization", authHeaderBuilder.toString());
-        connection.setRequestProperty("Content-Type", "application/cbor");
+        URI remote = config.getRemote();
+        HttpRequest request = HttpRequest.newBuilder(remote)
+                .header("Authorization", authorization)
+                .header("Content-Type", "application/cbor")
+                .POST(HttpRequest.BodyPublishers.fromPublisher(
+                        HttpRequest.BodyPublishers.ofInputStream(() -> new ProgressInputStream(bytes, progressListener)),
+                        bytes.length))
+                .build();
 
-        connection.setDoInput(true);
-        connection.setDoOutput(true);
-        connection.setInstanceFollowRedirects(false);
-
-        connection.setFixedLengthStreamingMode(bytes.length);
-
-        int off = 0;
-        while (off < bytes.length) {
-            connection.getOutputStream().write(bytes, off, Math.min(bytes.length - off, CHUNK_SIZE));
-            off += CHUNK_SIZE;
-            progressListener.update(off, bytes.length);
+        HttpResponse<Void> response;
+        try {
+            response = httpClient.send(request, HttpResponse.BodyHandlers.discarding());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new InterruptedIOException();
         }
-        connection.getOutputStream().close();
-
-        int responseCode = connection.getResponseCode();
-        if (responseCode >= 300) {
-            connection.disconnect();
-            throw new IOException("Status: " + responseCode);
+        if (response.statusCode() >= 300) {
+            throw new IOException("Status: " + response.statusCode());
         }
 
-        String targetLocation = connection.getHeaderField("Location");
-
-        connection.disconnect();
-
-        URL remote = config.getRemote();
+        String targetLocation = response.headers().firstValue("Location")
+                .orElseThrow(() -> new IOException("Missing Location header"));
         return remote.getPath().endsWith("/") ? remote + targetLocation : remote + "/" + targetLocation;
+    }
+
+    private static final class ProgressInputStream extends FilterInputStream {
+        private final long total;
+        private final UploadProgressListener listener;
+        private long done = 0;
+
+        ProgressInputStream(byte[] bytes, UploadProgressListener listener) {
+            super(new ByteArrayInputStream(bytes));
+            this.total = bytes.length;
+            this.listener = listener;
+        }
+
+        @Override
+        public int read() throws IOException {
+            int b = super.read();
+            if (b != -1) {
+                listener.update(++done, total);
+            }
+            return b;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            int n = super.read(b, off, len);
+            if (n > 0) {
+                done += n;
+                listener.update(done, total);
+            }
+            return n;
+        }
     }
 }

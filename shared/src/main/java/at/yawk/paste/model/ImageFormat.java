@@ -5,7 +5,11 @@ import java.awt.image.RenderedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 import javax.imageio.ImageIO;
 import lombok.Getter;
@@ -17,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum ImageFormat {
-    PNG("png", Collections.singleton("png"), "image/png") {
+    PNG("png", List.of("png"), "image/png") {
         @Override
         public BufferedImage decode(InputStream source) throws IOException {
             return ImageIO.read(source);
@@ -28,7 +32,7 @@ public enum ImageFormat {
             ImageIO.write(image, "PNG", target);
         }
     },
-    JPEG("jpg", Arrays.asList("jpeg", "jpg"), "image/jpeg") {
+    JPEG("jpg", List.of("jpeg", "jpg"), "image/jpeg") {
         @Override
         public BufferedImage decode(InputStream source) throws IOException {
             return ImageIO.read(source);
@@ -54,13 +58,9 @@ public enum ImageFormat {
 
     // lookup
 
-    private static final Map<String, ImageFormat> EXTENSIONS = new HashMap<String, ImageFormat>() {{
-        for (ImageFormat format : ImageFormat.values()) {
-            for (String extension : format.getExtensions()) {
-                put(extension, format);
-            }
-        }
-    }};
+    private static final Map<String, ImageFormat> EXTENSIONS = Arrays.stream(values())
+            .flatMap(format -> format.getExtensions().stream().map(extension -> Map.entry(extension, format)))
+            .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
 
     @Nullable
     public static ImageFormat byExtension(String ext) {

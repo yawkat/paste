@@ -107,7 +107,7 @@ public class Main {
         if (startsWith(bytes, JPEG_MAGIC)) {
             return helper.getImagePasteData(bytes, ImageFormat.JPEG);
         }
-        String text = helper.getTextPasteData(bytes).getText();
+        String text = helper.getTextPasteData(bytes).text();
         String trimmed = text.trim();
         // only a single token counts as a URL, so that e.g. "note: something" stays text
         if (trimmed.matches("[a-zA-Z][a-zA-Z0-9+.-]*://\\S+")) {
