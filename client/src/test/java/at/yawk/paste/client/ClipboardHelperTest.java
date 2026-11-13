@@ -20,6 +20,7 @@ class ClipboardHelperTest {
     @Test
     void urls() {
         assertNotNull(helper.getUrlPasteData("https://example.com/a?b=c"));
+        assertNotNull(helper.getUrlPasteData("https://example.com/search?q[]=a|b"));
         assertNull(helper.getUrlPasteData("note: something"));
         assertNull(helper.getUrlPasteData("relative/path"));
         assertNull(helper.getUrlPasteData("unknown://protocol"));

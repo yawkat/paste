@@ -7,8 +7,6 @@ import io.undertow.server.HttpServerExchange;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * @author yawkat
@@ -18,11 +16,6 @@ class Server {
     private final TemplateEngine templateEngine;
     private final Database database;
     private final List<Servlet> servlets;
-
-    /**
-     * Every request runs on its own virtual thread, so servlets and the database may block.
-     */
-    private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
     Server(Config config, TemplateEngine templateEngine, Database database, List<Servlet> servlets) {
         this.config = config;
@@ -38,7 +31,9 @@ class Server {
 
     void handle(HttpServerExchange exchange) throws Exception {
         if (exchange.isInIoThread()) {
-            exchange.dispatch(executor, this::handle);
+            // Servlets and the database may block, so every request runs on Undertow's worker pool. Its bounded size
+            // also limits how many requests (and request bodies) are in memory at once.
+            exchange.dispatch(this::handle);
             return;
         }
         new Request(exchange, database, templateEngine, servlets.iterator()).proceed();

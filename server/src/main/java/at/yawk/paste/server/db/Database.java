@@ -5,7 +5,7 @@ import at.yawk.paste.model.PasteData;
 import java.util.Optional;
 
 /**
- * Requests are handled on virtual threads, so all methods may block.
+ * Requests are handled on worker threads, so all methods may block.
  *
  * @author yawkat
  */

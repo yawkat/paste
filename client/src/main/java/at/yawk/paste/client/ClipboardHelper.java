@@ -16,8 +16,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.StandardCharsets;
@@ -116,9 +115,12 @@ public class ClipboardHelper {
     @Nullable
     public URLPasteData getUrlPasteData(String url) {
         try {
-            // toURL rejects relative URIs and unknown protocols
-            return new URLPasteData(new URI(url).toURL());
-        } catch (URISyntaxException | MalformedURLException | IllegalArgumentException e) {
+            // Not URI: it rejects characters like [ ] | that browsers accept in links. The server reads stored URLs
+            // with new URL too.
+            @SuppressWarnings("deprecation")
+            URL parsed = new URL(url);
+            return new URLPasteData(parsed);
+        } catch (MalformedURLException e) {
             return null;
         }
     }
