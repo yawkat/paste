@@ -25,10 +25,12 @@ let
   # Everything that decides which files Maven downloads. It goes into the name of the download, so changing any of it
   # downloads again, and fails on the hash if the dependencies changed, instead of a store that already has the old
   # download silently building against it.
+  # The pom files are read from this flake's source rather than from src: src is only written to the store when it is
+  # built, so a consumer that only evaluates (`nix flake check --no-build`) couldn't read it.
   depsDigest = builtins.substring 0 12 (
     builtins.hashString "sha256" (
       lib.concatStringsSep "\n" (
-        map (module: builtins.hashFile "sha256" (src + "/${module}pom.xml")) [
+        map (module: builtins.hashFile "sha256" (../. + "/${module}pom.xml")) [
           ""
           "shared/"
           "server/"
