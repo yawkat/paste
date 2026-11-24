@@ -1,7 +1,7 @@
 {
   description = "paste: paste server (s.yawk.at) and its upload CLI";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.11-small";
 
   outputs =
     { self, nixpkgs }:
