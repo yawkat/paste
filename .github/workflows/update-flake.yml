@@ -27,7 +27,7 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: cachix/install-nix-action@3dc140bfc76c49fbd4dd958429132e3746bcb086 # v31
+      - uses: cachix/install-nix-action@bb0495a1086c46893eee56f32fd192dfe4a15bb9 # v32
       # Pinned to a commit: it runs with this job's write permissions.
       - uses: yawkat/flake-cooldown@5eca44355118307e976074ddab3c51f6f94df5dc
         id: update
